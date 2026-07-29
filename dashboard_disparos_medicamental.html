@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Disparos WhatsApp — Medicamental</title>
+<meta name="author" content="Manuela Barbeiro">
+<meta name="last-modified" content="2026-07-29">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#0f1720;--panel:#16212e;--panel2:#1c2a3a;--line:#2a3a4d;--txt:#e8eef5;--muted:#93a4b8;--brand:#12b886;--red:#ff6b6b;--amber:#ffd43b;--green:#51cf66;--blue:#4dabf7;--purple:#9775fa;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);padding:22px;line-height:1.4}
+  .wrap{max-width:1360px;margin:0 auto}
+  header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:14px}
+  h1{font-size:22px;font-weight:700} h1 span{color:var(--brand)}
+  .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .globalbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#0f1720 70%,rgba(15,23,32,.85));display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 14px;margin-bottom:18px;border:1px solid var(--brand);border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+  .globalbar label{font-size:13px;font-weight:600;color:var(--brand)}
+  .globalbar .info{font-size:12px;color:var(--muted);margin-left:auto} .globalbar .info b{color:var(--txt)}
+  .ms{position:relative}
+  .ms-btn{cursor:pointer;background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:9px 12px;border-radius:8px;font-size:14px;min-width:300px;text-align:left}
+  .ms-btn:hover{border-color:var(--muted)}
+  .ms-panel{position:absolute;top:112%;left:0;z-index:30;background:var(--panel);border:1px solid var(--brand);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);width:360px;max-width:92vw;padding:8px}
+  .ms-actions{display:flex;gap:8px;margin-bottom:6px}
+  .ms-actions button{flex:1;cursor:pointer;background:var(--panel2);border:1px solid var(--line);color:var(--muted);padding:7px;border-radius:6px;font-size:12px}
+  .ms-actions button:hover{color:var(--txt);border-color:var(--muted)}
+  .ms-list{max-height:340px;overflow:auto;display:flex;flex-direction:column;gap:2px}
+  .ms-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;font-size:13px;cursor:pointer}
+  .ms-item:hover{background:var(--panel2)} .ms-item input{accent-color:var(--brand);width:15px;height:15px}
+  .wk-item{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--txt);background:var(--panel2);border:1px solid var(--line);padding:8px 11px;border-radius:8px;cursor:pointer}
+  .wk-item input{accent-color:var(--brand);width:15px;height:15px}
+  .nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  .nav a{font-size:12.5px;color:var(--muted);text-decoration:none;padding:7px 12px;border:1px solid var(--line);border-radius:20px;background:var(--panel);transition:.15s}
+  .nav a:hover{color:var(--txt);border-color:var(--brand);background:var(--panel2)}
+  html{scroll-behavior:smooth}
+  .section-title{scroll-margin-top:80px;font-size:16px;font-weight:700;margin:26px 0 14px;padding-left:10px;border-left:4px solid var(--brand);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .section-title small{font-weight:400;color:var(--muted);font-size:12px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--brand)}
+  .kpi.red::before{background:var(--red)} .kpi.amber::before{background:var(--amber)} .kpi.green::before{background:var(--green)} .kpi.blue::before{background:var(--blue)} .kpi.purple::before{background:var(--purple)}
+  .kpi .lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .kpi .val{font-size:26px;font-weight:700;margin-top:6px} .kpi .val small{font-size:12px;color:var(--muted);font-weight:500}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card h3{font-size:14px;font-weight:600;margin-bottom:4px} .card .hint{font-size:11px;color:var(--muted);margin-bottom:12px}
+  .col-4{grid-column:span 4} .col-5{grid-column:span 5} .col-6{grid-column:span 6} .col-7{grid-column:span 7} .col-8{grid-column:span 8} .col-12{grid-column:span 12}
+  .chart-box{position:relative;height:300px} .chart-box.tall{height:440px} .chart-box.xtall{height:620px}
+  @media(max-width:900px){.col-4,.col-5,.col-6,.col-7,.col-8{grid-column:span 12}}
+  .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+  .filters select,.filters input{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:8px 10px;border-radius:8px;font-size:13px}
+  .filters input{min-width:200px} .filters .clear{cursor:pointer;color:var(--brand);font-size:12px;text-decoration:underline;background:none;border:none}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--panel);z-index:1}
+  th:hover{color:var(--txt)} td.num,th.num{text-align:right}
+  tbody tr:hover{background:var(--panel2)}
+  .badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block}
+  .b-alto{background:rgba(255,107,107,.16);color:var(--red)} .b-medio{background:rgba(255,212,59,.16);color:var(--amber)} .b-baixo{background:rgba(81,207,102,.16);color:var(--green)}
+  .rate{font-weight:600} .mini{display:inline-flex;gap:4px;align-items:center} .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .rank{font-weight:700;color:var(--muted)}
+  .table-scroll{max-height:560px;overflow:auto;border-radius:8px} .table-scroll.sm{max-height:420px}
+  .foot{color:var(--muted);font-size:11px;text-align:center;margin-top:24px;padding-top:14px;border-top:1px solid var(--line)}
+  .pill{display:inline-block;padding:1px 7px;border-radius:6px;font-size:11px;background:var(--panel2);color:var(--muted);margin-left:6px}
+  .muted-row td{color:var(--muted)} .heat{font-weight:600;padding:2px 6px;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Dashboard de Disparos <span>WhatsApp</span> — Medicamental</h1>
+    <div class="sub">Período: <b>01 a 28/Jul/2026</b> (4 semanas) &nbsp;·&nbsp; Quem disparou × quem não disparou · listas por vendedor · risco de bloqueio</div>
+    <div class="sub" style="margin-top:4px;font-size:11px;opacity:.75">Criado por <b>Manuela Barbeiro</b> · última atualização em <b>29/07/2026</b></div>
+  </header>
+
+  <div class="globalbar">
+    <label>🔎 Supervisores:</label>
+    <div class="ms">
+      <button id="msBtn" class="ms-btn">Todos os supervisores ▾</button>
+      <div id="msPanel" class="ms-panel" style="display:none">
+        <div class="ms-actions"><button id="msAll">marcar todos</button><button id="msNone">limpar (todos)</button></div>
+        <div id="msList" class="ms-list"></div>
+      </div>
+    </div>
+    <label style="margin-left:6px">📆 Semanas:</label>
+    <label class="wk-item"><input type="checkbox" id="wk1" value="w1" checked> S1 · 01–07/Jul</label>
+    <label class="wk-item"><input type="checkbox" id="wk2" value="w2" checked> S2 · 08–14/Jul</label>
+    <label class="wk-item"><input type="checkbox" id="wk3" value="w3" checked> S3 · 15–17/Jul*</label>
+    <label class="wk-item"><input type="checkbox" id="wk4" value="w4" checked> S4 · 22–28/Jul</label>
+    <span class="info" id="gInfo"></span>
+  </div>
+
+  <nav class="nav">
+    <a href="#sec-cob">📣 Cobertura</a>
+    <a href="#sec-rank">🏆 Listas por vendedor</a>
+    <a href="#sec-listas">📋 Nomes das listas</a>
+    <a href="#sec-fez">✅ Dispararam</a>
+    <a href="#sec-sem">🚫 Não dispararam</a>
+    <a href="#sec-risco">🚨 Risco de bloqueio</a>
+    <a href="#sec-sup">👔 Supervisores</a>
+  </nav>
+
+  <div class="section-title" id="sec-cob">📣 Cobertura de disparos <small>quantos vendedores da base efetivamente dispararam</small></div>
+  <div class="kpis" id="kpisCob"></div>
+  <div class="grid" style="margin-top:16px">
+    <div class="card col-4"><h3>Dispararam × Não dispararam</h3><div class="hint">Vendedores cadastrados (exclui VAGO e supervisores)</div><div class="chart-box"><canvas id="coverageDonut"></canvas></div></div>
+    <div class="card col-8"><h3>Cobertura por supervisor</h3><div class="hint">Dispararam (verde) × sem disparo (vermelho) em cada equipe</div><div class="chart-box xtall"><canvas id="coverageBySup"></canvas></div></div>
+  </div>
+
+  <div class="section-title" id="sec-rank">🏆 Listas mais disparadas por vendedor <small>nº de listas (disparos) enviadas por cada vendedor</small></div>
+  <div class="grid">
+    <div class="card col-6"><h3>Top 15 — vendedores por nº de listas</h3><div class="hint">Cada disparo = 1 envio de lista</div><div class="chart-box tall"><canvas id="rankChart"></canvas></div></div>
+    <div class="card col-6"><h3>Ranking completo</h3><div class="hint">Ordenado pelo nº de listas disparadas</div>
+      <div class="table-scroll" style="max-height:440px"><table><thead><tr><th>#</th><th>Vendedor</th><th>Supervisor</th><th class="num">Nº listas</th><th class="num">Msgs</th><th class="num">Taxa falha</th></tr></thead><tbody id="bodyRank"></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="section-title" id="sec-listas">📋 Nomes das listas disparadas <small>listas efetivamente enviadas no período</small></div>
+  <div class="card col-12">
+    <div class="filters">
+      <input id="lBusca" type="text" placeholder="Buscar lista ou vendedor…">
+      <span class="pill" id="lStatus" style="margin-left:auto"></span>
+    </div>
+    <div class="grid">
+      <div class="card col-6" style="background:var(--panel2)"><h3>Top 15 listas por mensagens</h3><div class="hint">Listas que mais geraram envios</div><div class="chart-box tall"><canvas id="listChart"></canvas></div></div>
+      <div class="card col-6" style="background:var(--panel2)"><h3>Ranking de listas <span class="pill" id="lCount"></span></h3><div class="hint">Envios = quantas vezes a lista foi disparada</div>
+        <div class="table-scroll" style="max-height:440px"><table><thead><tr><th>Lista</th><th class="num">Envios</th><th class="num">Msgs</th><th class="num">Taxa falha</th></tr></thead><tbody id="bodyList"></tbody></table></div></div>
+      <div class="card col-12" style="background:var(--panel2)"><h3>Listas por vendedor <span class="pill" id="dvCount"></span></h3><div class="hint">Cada lista disparada por cada vendedor, com o resultado do envio</div>
+        <div class="table-scroll"><table><thead><tr><th>Vendedor / Lista</th><th>Data e hora</th><th class="num">Msgs</th><th class="num">Sucesso</th><th class="num">Falha</th><th class="num">Taxa</th></tr></thead><tbody id="bodyDispVend"></tbody></table></div></div>
+    </div>
+  </div>
+
+  <div class="section-title" id="sec-fez">✅ Vendedores que dispararam <small id="fezSubtitle"></small></div>
+  <div class="card col-12">
+    <div class="filters">
+      <select id="fFilial"><option value="">Todas as filiais</option></select>
+      <select id="fVendedor"><option value="">Todos os vendedores</option></select>
+      <select id="fRisco"><option value="">Todos os riscos</option><option value="Alto">🔴 Alto</option><option value="Médio">🟡 Médio</option><option value="Baixo">🟢 Baixo</option></select>
+      <input id="fBusca" type="text" placeholder="Buscar vendedor ou código…">
+      <button class="clear" id="clearBtn">limpar filtros</button>
+      <span class="pill" id="rowcount" style="margin-left:auto"></span>
+    </div>
+    <div class="table-scroll">
+      <table id="tbl"><thead><tr>
+        <th data-k="codigo">Código</th><th data-k="vendedor">Vendedor</th><th data-k="supervisor">Supervisor</th><th data-k="filial">Filial</th>
+        <th class="num" data-k="disparos">Nº listas</th><th class="num" data-k="msgs">Total msgs</th><th class="num" data-k="maxSim">Máx. simult.</th>
+        <th class="num" data-k="sucesso">Sucesso</th><th class="num" data-k="falha">Falha</th><th class="num" data-k="taxa">Taxa falha</th><th data-k="risco">Risco</th>
+      </tr></thead><tbody id="tbody"></tbody></table>
+    </div>
+  </div>
+
+  <div class="section-title" id="sec-sem">🚫 Vendedores que não dispararam <small>cobertura da equipe (base vendedores)</small></div>
+  <div id="semDisparoWrap"></div>
+
+  <div class="section-title" id="sec-risco">🚨 Risco de bloqueio de número <small>quanto maior o disparo simultâneo, maior o risco de bloqueio</small></div>
+  <div class="kpis" id="kpisRisco"></div>
+  <div class="grid" style="margin-top:16px">
+    <div class="card col-4"><h3>Vendedores por faixa de risco</h3><div class="hint">🔴 Alto ≥ 50 · 🟡 Médio ≥ 25 · 🟢 Baixo &lt; 25 msgs simultâneas</div><div class="chart-box"><canvas id="riscoPie"></canvas></div></div>
+    <div class="card col-8"><h3>Risco por supervisor</h3><div class="hint">Nº de vendedores em cada faixa de risco</div><div class="chart-box tall"><canvas id="riscoSup"></canvas></div></div>
+    <div class="card col-12"><h3>⚠️ Vendedores em risco ALTO <span class="pill" id="altoCount"></span></h3><div class="hint">Prioridade de ação — ordenados pelo maior disparo simultâneo.</div>
+      <div class="table-scroll sm"><table id="tblAlto"><thead><tr>
+        <th data-k="maxSim" class="num">Máx. simult.</th><th data-k="vendedor">Vendedor</th><th data-k="supervisor">Supervisor</th><th data-k="filial">Filial</th><th data-k="msgs" class="num">Msgs</th><th data-k="falha" class="num">Falhas</th><th data-k="taxa" class="num">Taxa falha</th>
+      </tr></thead><tbody id="bodyAlto"></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="section-title" id="sec-sup">👔 Supervisores <small>desempenho e exposição a risco por equipe</small></div>
+  <div class="grid">
+    <div class="card col-7"><h3>Ranking de supervisores</h3><div class="hint">Clique nos cabeçalhos para ordenar.</div>
+      <div class="table-scroll sm"><table id="tblSup"><thead><tr>
+        <th data-k="nome">Supervisor</th><th data-k="filiais">Filial</th><th data-k="vend" class="num">Vend.</th><th data-k="disparos" class="num">Listas</th><th data-k="msgs" class="num">Msgs</th><th data-k="falhas" class="num">Falhas</th><th data-k="taxa" class="num">Taxa falha</th><th data-k="maxSim" class="num">Máx. sim.</th><th data-k="risco">Risco (A/M/B)</th>
+      </tr></thead><tbody id="bodySup"></tbody></table></div></div>
+    <div class="card col-5"><h3>Volume × Taxa de falha por supervisor</h3><div class="hint">Cada bolha = 1 supervisor · X: mensagens · Y: taxa de falha · tamanho: nº vendedores</div><div class="chart-box tall"><canvas id="supChart"></canvas></div></div>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+// ================= RELATÓRIO DE DISPAROS (agregado por disparo) — 08 a 14/Jul/2026 =================
+// colunas: ID;Codigo;Vendedor;QtdClientesBase;Filial;Lista;Status;QtdRealizados;Data;Sucesso;Falha;Expirado;Outros;Colecao
+const REL_CSV=`ID;Codigo;Vendedor;Base;Filial;Lista;Status;Qtd;Data;Sucesso;Falha;Expirado;Outros;Colecao
+6a4e2d549491e84d6c0b9544;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TA´BOMBANDO HPC G-TECH PR;SUCCESS;10;2026-07-08 07:58:29;10;0;0;0;broadcasts
+6a4e2e36ebce7e06b5b26f5a;93563;2.2.05 MARCELO NEVES 10/10/22;94;1 - FARMA GO;PROMO GERMED GO;PARTIAL;94;2026-07-08 08:02:15;90;4;0;0;broadcasts
+6a4e2e60ebce7e06b5b26f67;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TÁ BOMBANDO HPC FINI PR;PARTIAL;12;2026-07-08 08:02:57;11;1;0;0;broadcasts
+6a4e39e59491e84d6c0b9553;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;PROMO GERMED GO;PARTIAL;9;2026-07-08 08:52:05;8;1;0;0;broadcasts
+6a4e3a1a9491e84d6c0b9560;90179;2.2.08 NARAYANE ALMEIDA 13/04/26;59;1 - FARMA GO;PROMO GERMED GO;SUCCESS;12;2026-07-08 08:52:58;12;0;0;0;broadcasts
+6a4e3a1bebce7e06b5b26f77;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;PROMO GERMED GO;PARTIAL;9;2026-07-08 08:53:00;8;1;0;0;broadcasts
+6a4e3a789491e84d6c0b956a;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;PROMO GERMED GO;SUCCESS;9;2026-07-08 08:54:32;9;0;0;0;broadcasts
+6a4e3ad8ebce7e06b5b26f81;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;PROMO GERMED GO;SUCCESS;9;2026-07-08 08:56:09;9;0;0;0;broadcasts
+6a4e3b059491e84d6c0b9570;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;PROMO GERMED GO;SUCCESS;5;2026-07-08 08:56:54;5;0;0;0;broadcasts
+6a4e3e7febce7e06b5b26fe3;94363;1.1.14 JOSE GONÇALVES 23/06/25;111;3 - FARMA SP;TÁ BOMBANDO HPC FINI SP;PARTIAL;111;2026-07-08 09:11:44;53;58;0;0;broadcasts
+6a4e3f4e9491e84d6c0b95d0;91392;4.3.08 ELIELTON FRAGA 06/12/21;93;6 - FARMA PR;TÁ BOMBANDO HPC: HERBISSIMO PR;PARTIAL;93;2026-07-08 09:15:10;87;6;0;0;broadcasts
+6a4e41b1ebce7e06b5b270b2;93907;2.5.00 FABIANE - MC 19/01/26;239;1 - FARMA GO;TÁ BOMBANDO HPC - HERBISSIMO GO;SUCCESS;3;2026-07-08 09:25:21;3;0;0;0;broadcasts
+6a4e4428ebce7e06b5b270c0;90283;2.2.07 MARCO CARDOSO 12/01/26;102;1 - FARMA GO;PROMO GERMED GO;FAILED;15;2026-07-08 09:35:52;0;15;0;0;broadcasts
+6a4e445eebce7e06b5b270cb;93893;2.4.05 BRUNO MONTEIRO 22/09/25;57;2 - FARMA DF;PROMO GERMED DF;SUCCESS;10;2026-07-08 09:36:47;10;0;0;0;broadcasts
+6a4e4730ebce7e06b5b270d5;90283;2.2.07 MARCO CARDOSO 12/01/26;102;1 - FARMA GO;PROMO GERMED GO;FAILED;1;2026-07-08 09:48:48;0;1;0;0;broadcasts
+6a4e49ccebce7e06b5b2710d;91357;3.1.07 MARILZA ALVES 16/09/24;66;5 - FARMA RJ;PROMO GERMED RJ;PARTIAL;66;2026-07-08 09:59:56;47;19;0;0;broadcasts
+6a4e5249ebce7e06b5b27631;90903;3.1.03 LUIZ AZEVEDO 03/04/18;54;5 - FARMA RJ;PROMO GERMED RJ;PARTIAL;54;2026-07-08 10:36:10;48;6;0;0;broadcasts
+6a4e528e9491e84d6c0b97cd;94028;2.2.09 ROBERTO MORAIS 10/11/25;59;1 - FARMA GO;PROMO GERMED GO;PARTIAL;59;2026-07-08 10:37:18;47;12;0;0;broadcasts
+6a4e533b9491e84d6c0b9816;90902;3.1.02 MAURO LOPES 06/03/23;74;5 - FARMA RJ;PROMO GERMED RJ;PARTIAL;74;2026-07-08 10:40:12;68;6;0;0;broadcasts
+6a4e567aebce7e06b5b2763c;93895;2.2.14 DAVID ALVES 08/06/26;75;1 - FARMA GO;TÁ BOMBANDO HPC COTY - GO;PARTIAL;9;2026-07-08 10:54:03;7;2;0;0;broadcasts
+6a4e57899491e84d6c0b982a;90213;1.1.13 FABIO MORAIS 08/06/26;116;3 - FARMA SP;PROMO GERMED SP;PARTIAL;15;2026-07-08 10:58:33;14;1;0;0;broadcasts
+6a4e57aa9491e84d6c0b9833;90190;2.4.02 ANA FLAVIA BARBOSA 19/08/24;45;1 - FARMA GO;PROMO GERMED GO;SUCCESS;8;2026-07-08 10:59:07;8;0;0;0;broadcasts
+6a4e57c29491e84d6c0b9843;90213;1.1.13 FABIO MORAIS 08/06/26;116;3 - FARMA SP;PROMO GERMED SP;SUCCESS;15;2026-07-08 10:59:31;15;0;0;0;broadcasts
+6a4e57ff9491e84d6c0b9853;90213;1.1.13 FABIO MORAIS 08/06/26;116;3 - FARMA SP;PROMO GERMED SP;PARTIAL;15;2026-07-08 11:00:32;13;2;0;0;broadcasts
+6a4e580d9491e84d6c0b985e;90178;2.2.10 DANIEL ALVES 08/06/26;48;1 - FARMA GO;PROMO GERMED GO;SUCCESS;10;2026-07-08 11:00:45;10;0;0;0;broadcasts
+6a4e58349491e84d6c0b98a0;91803;3.1.05 CARLOS OLIVIERI 04/03/24;75;5 - FARMA RJ;PROMO GERMED RJ;PARTIAL;75;2026-07-08 11:01:25;50;25;0;0;broadcasts
+6a4e583f9491e84d6c0b98b0;90213;1.1.13 FABIO MORAIS 08/06/26;116;3 - FARMA SP;PROMO GERMED SP;PARTIAL;15;2026-07-08 11:01:36;14;1;0;0;broadcasts
+6a4e58609491e84d6c0b9906;93565;1.1.05 WELLINGTON SILVA 02/02/17;91;3 - FARMA SP;PROMO GERMED SP;PARTIAL;91;2026-07-08 11:02:08;78;13;0;0;broadcasts
+6a4e587b9491e84d6c0b9916;90213;1.1.13 FABIO MORAIS 08/06/26;116;3 - FARMA SP;PROMO GERMED SP;PARTIAL;15;2026-07-08 11:02:36;14;1;0;0;broadcasts
+6a4e58b09491e84d6c0b9921;90178;2.2.10 DANIEL ALVES 08/06/26;48;1 - FARMA GO;PROMO GERMED GO;PARTIAL;10;2026-07-08 11:03:28;5;5;0;0;broadcasts
+6a4e5906ebce7e06b5b2764d;90213;1.1.13 FABIO MORAIS 08/06/26;116;3 - FARMA SP;PROMO GERMED SP;SUCCESS;15;2026-07-08 11:04:55;15;0;0;0;broadcasts
+6a4e59729491e84d6c0b992d;90178;2.2.10 DANIEL ALVES 08/06/26;48;1 - FARMA GO;PROMO GERMED GO;SUCCESS;10;2026-07-08 11:06:42;10;0;0;0;broadcasts
+6a4e5a159491e84d6c0b9938;90178;2.2.10 DANIEL ALVES 08/06/26;48;1 - FARMA GO;PROMO GERMED GO;PARTIAL;10;2026-07-08 11:09:26;9;1;0;0;broadcasts
+6a4e61bdebce7e06b5b277f1;91148;3.1.04 FELIX SA 06/11/17;61;5 - FARMA RJ;PROMO GERMED RJ;IN_PROGRESS;61;2026-07-08 11:42:05;52;8;0;1;broadcasts
+6a4e624d9491e84d6c0b9d12;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TA´BOMBANDO HPC G-TECH PR;SUCCESS;1;2026-07-08 11:44:30;1;0;0;0;broadcasts
+6a4e62bd9491e84d6c0b9d15;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TA´BOMBANDO HPC G-TECH PR;SUCCESS;1;2026-07-08 11:46:21;1;0;0;0;broadcasts
+6a4e6448ebce7e06b5b277ff;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TÁ BOMBANDO HPC - GRANADO PR;SUCCESS;5;2026-07-08 11:52:56;5;0;0;0;broadcasts
+6a4e65e69491e84d6c0b9d1c;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TA´BOMBANDO HPC G-TECH PR;SUCCESS;1;2026-07-08 11:59:51;1;0;0;0;broadcasts
+6a4e6a6cebce7e06b5b2780b;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;MEGA PROMO - PR;SUCCESS;4;2026-07-08 12:19:09;4;0;0;0;broadcasts
+6a4e6ac39491e84d6c0b9d24;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TÁ BOMBANDO HPC: HERBISSIMO PR;SUCCESS;1;2026-07-08 12:20:35;1;0;0;0;broadcasts
+6a4e6b239491e84d6c0b9d28;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TA´BOMBANDO HPC G-TECH PR;SUCCESS;1;2026-07-08 12:22:11;1;0;0;0;broadcasts
+6a4e6b4d9491e84d6c0b9d8a;91807;3.2.07 CAROLINA FERNANDES 16/03/26;98;5 - FARMA RJ;MEGA PROMO - RJ;PARTIAL;98;2026-07-08 12:22:53;55;43;0;0;broadcasts
+6a4e6b7cebce7e06b5b2780d;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TÁ BOMBANDO HPC FINI PR;SUCCESS;1;2026-07-08 12:23:41;1;0;0;0;broadcasts
+6a4e6c809491e84d6c0b9d8c;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TA´BOMBANDO HPC G-TECH PR;FAILED;1;2026-07-08 12:28:01;0;1;0;0;broadcasts
+6a4e72e2ebce7e06b5b2784e;93931;2.2.06 MORGANA RODRIGUES 21/05/18;60;1 - FARMA GO;MEGA PROMO - GO;PARTIAL;60;2026-07-08 12:55:14;52;8;0;0;broadcasts
+6a4e73f1ebce7e06b5b27933;90231;1.1.07 LUCIANA SILVA 03/11/25;79;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;79;2026-07-08 12:59:46;65;14;0;0;broadcasts
+6a4e77269491e84d6c0b9e09;90264;1.5.12 CARLOS CESAR 09/09/24;119;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;119;2026-07-08 13:13:27;117;2;0;0;broadcasts
+6a4e7b8022be954746cad0eb;90915;3.4.10 MICELINO COSTA 05/03/18;61;5 - FARMA RJ;MEGA PROMO - RJ;PARTIAL;61;2026-07-08 13:32:01;49;12;0;0;broadcasts
+6a4e7d2322be954746cad169;94295;1.5.03 ANGELO OLIVEIRA 09/12/24;126;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;126;2026-07-08 13:39:00;79;47;0;0;broadcasts
+6a4e89129491e84d6c0b9e63;93642;1.1.10 THIAGO MULATO 05/04/17;73;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;73;2026-07-08 14:29:55;59;14;0;0;broadcasts
+6a4e8b869491e84d6c0b9e76;91369;2.1.05 ADEILDO SILVA 18/06/18;71;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;9;2026-07-08 14:40:23;9;0;0;0;broadcasts
+6a4e8ccc98e7d3697148887f;91369;2.1.05 ADEILDO SILVA 18/06/18;71;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;1;2026-07-08 14:45:48;1;0;0;0;broadcasts
+6a4e8ff198e7d36971488db0;94121;1.1.15 DAVI INACIO 19/02/25;90;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;90;2026-07-08 14:59:14;78;12;0;0;broadcasts
+6a4e90ac98e7d36971488e00;94362;1.1.02 PAULO SANTOS 08/05/23;81;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;81;2026-07-08 15:02:21;77;4;0;0;broadcasts
+6a4e92059491e84d6c0b9efe;90862;1.5.09 RAFAEL VICENTE 05/07/21;108;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;109;2026-07-08 15:08:06;106;3;0;0;broadcasts
+6a4e921698e7d36971488e0b;90654;1.5.13 HERICA SOUZA 16/09/24;68;3 - FARMA SP;MEGA OFERTA - SP;FAILED;5;2026-07-08 15:08:23;0;5;0;0;broadcasts
+6a4e92d99491e84d6c0b9f0c;90654;1.5.13 HERICA SOUZA 16/09/24;68;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;13;2026-07-08 15:11:37;13;0;0;0;broadcasts
+6a4e937e9491e84d6c0b9f15;90768;2.3.05 DARA SANTOS 18/02/26;62;1 - FARMA GO;PROMO GERMED GO;PARTIAL;4;2026-07-08 15:14:23;3;1;0;0;broadcasts
+6a4ea6f69491e84d6c0b9f6f;90209;1.1.06 JOSE PIMENTA 15/06/26;85;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;85;2026-07-08 16:37:26;30;55;0;0;broadcasts
+6a4eb22f07d1f742329c5378;90341;1.5.16 GABRIEL BORGES 02/03/26;133;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;10;2026-07-08 17:25:19;8;2;0;0;broadcasts
+6a4eb25f9491e84d6c0b9f8b;90341;1.5.16 GABRIEL BORGES 02/03/26;133;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;10;2026-07-08 17:26:08;8;2;0;0;broadcasts
+6a4eb48d9491e84d6c0b9f9d;90341;1.5.16 GABRIEL BORGES 02/03/26;133;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;16;2026-07-08 17:35:26;11;5;0;0;broadcasts
+6a4f8139b0e7647987404df1;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;PROMO GERMED GO;SUCCESS;1;2026-07-09 08:08:41;1;0;0;0;broadcasts
+6a4f81639491e84d6c0ba6eb;93895;2.2.14 DAVID ALVES 08/06/26;74;1 - FARMA GO;MEGA PROMO - GO;PARTIAL;9;2026-07-09 08:09:24;3;6;0;0;broadcasts
+6a4f81c8b0e7647987404dfb;90199;2.2.03 DIOGO ROCHA 08/06/26;49;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;9;2026-07-09 08:11:04;9;0;0;0;broadcasts
+6a4f81f7b0e7647987404e05;90199;2.2.03 DIOGO ROCHA 08/06/26;49;1 - FARMA GO;MEGA PROMO - GO;PARTIAL;9;2026-07-09 08:11:52;8;1;0;0;broadcasts
+6a4f8235b0e7647987404e0f;90199;2.2.03 DIOGO ROCHA 08/06/26;49;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;9;2026-07-09 08:12:53;9;0;0;0;broadcasts
+6a4f827db0e7647987404e1b;90199;2.2.03 DIOGO ROCHA 08/06/26;49;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;9;2026-07-09 08:14:05;9;0;0;0;broadcasts
+6a4f87b1b0e7647987404e1d;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;TÁ BOMBANDO HPC ABOVE GO;SUCCESS;1;2026-07-09 08:36:17;1;0;0;0;broadcasts
+6a4f8e654205ce73c7dbbed9;91392;4.3.08 ELIELTON FRAGA 06/12/21;94;6 - FARMA PR;MEGA PROMO - PR;PARTIAL;94;2026-07-09 09:04:54;89;5;0;0;broadcasts
+6a4f94804205ce73c7dbbf17;93931;2.2.06 MORGANA RODRIGUES 21/05/18;60;1 - FARMA GO;MEGA PROMO - GO;PARTIAL;60;2026-07-09 09:30:57;51;9;0;0;broadcasts
+6a4f96b34205ce73c7dbbf24;90190;2.4.02 ANA FLAVIA BARBOSA 19/08/24;45;1 - FARMA GO;PROMO GERMED GO;PARTIAL;10;2026-07-09 09:40:19;9;1;0;0;broadcasts
+6a4f98b14205ce73c7dbbf34;90773;2.4.10 GABRIEL LOPES 19/01/26;54;1 - FARMA GO;TÁ BOMBANDO HPC ABOVE GO;PARTIAL;13;2026-07-09 09:48:50;10;3;0;0;broadcasts
+6a4f9f9e9491e84d6c0ba76c;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;15;2026-07-09 10:18:23;15;0;0;0;broadcasts
+6a4f9fdb9491e84d6c0ba77c;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;15;2026-07-09 10:19:24;15;0;0;0;broadcasts
+6a4fa0274205ce73c7dbbf44;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;15;2026-07-09 10:20:40;14;1;0;0;broadcasts
+6a4fa0a24205ce73c7dbbf53;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;14;2026-07-09 10:22:43;14;0;0;0;broadcasts
+6a4fa0da4205ce73c7dbbf62;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;14;2026-07-09 10:23:38;13;1;0;0;broadcasts
+6a4fa1189491e84d6c0ba78c;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;14;2026-07-09 10:24:40;13;1;0;0;broadcasts
+6a4fa5124205ce73c7dbbfc2;93563;2.2.05 MARCELO NEVES 10/10/22;94;1 - FARMA GO;PROMO GERMED GO;PARTIAL;94;2026-07-09 10:41:38;90;4;0;0;broadcasts
+6a4fb1af9491e84d6c0ba7d2;90544;1.2.07 KLEBER MOLINA 22/02/21;62;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;61;2026-07-09 11:35:27;2;59;0;0;broadcasts
+6a4fb5104205ce73c7dbbfc9;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;97;6 - FARMA PR;TÁ BOMBANDO HPC FINI PR;SUCCESS;1;2026-07-09 11:49:52;1;0;0;0;broadcasts
+6a4fc6469491e84d6c0ba819;94028;2.2.09 ROBERTO MORAIS 10/11/25;60;1 - FARMA GO;MEGA PROMO - GO;PARTIAL;60;2026-07-09 13:03:19;48;12;0;0;broadcasts
+6a4fcd2208ef0411562afd1d;90179;2.2.08 NARAYANE ALMEIDA 13/04/26;63;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;10;2026-07-09 13:32:34;10;0;0;0;broadcasts
+6a4fdf1a08ef0411562afd75;93565;1.1.05 WELLINGTON SILVA 02/02/17;91;3 - FARMA SP;PROMO GERMED SP;PARTIAL;91;2026-07-09 14:49:15;78;13;0;0;broadcasts
+6a4fe09a9491e84d6c0bac3e;93893;2.4.05 BRUNO MONTEIRO 22/09/25;57;2 - FARMA DF;MEGA PROMO - DF;PARTIAL;10;2026-07-09 14:55:39;8;2;0;0;broadcasts
+6a4fe85808ef0411562afdd3;91392;4.3.08 ELIELTON FRAGA 06/12/21;93;6 - FARMA PR;TÁ BOMBANDO HPC ABOVE PR;PARTIAL;93;2026-07-09 15:28:40;88;5;0;0;broadcasts
+6a50d2c108ef0411562affa3;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;55;3 - FARMA SP;VENDA MAIS NEOQ - SP! 10/07;PARTIAL;55;2026-07-10 08:08:50;7;48;0;0;broadcasts
+6a50d5049491e84d6c0bb369;90199;2.2.03 DIOGO ROCHA 08/06/26;44;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;SUCCESS;9;2026-07-10 08:18:28;9;0;0;0;broadcasts
+6a50d52a08ef0411562affae;90199;2.2.03 DIOGO ROCHA 08/06/26;44;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;PARTIAL;9;2026-07-10 08:19:07;8;1;0;0;broadcasts
+6a50d57b08ef0411562affb8;90199;2.2.03 DIOGO ROCHA 08/06/26;44;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;SUCCESS;9;2026-07-10 08:20:28;9;0;0;0;broadcasts
+6a50d5b508ef0411562affc2;90199;2.2.03 DIOGO ROCHA 08/06/26;44;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;SUCCESS;9;2026-07-10 08:21:25;9;0;0;0;broadcasts
+6a50d8bd08ef0411562affc4;90199;2.2.03 DIOGO ROCHA 08/06/26;44;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;SUCCESS;1;2026-07-10 08:34:22;1;0;0;0;broadcasts
+6a50d90908ef0411562affd4;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;55;3 - FARMA SP;VENDA MAIS NEOQ - SP! 10/07;PARTIAL;15;2026-07-10 08:35:37;1;14;0;0;broadcasts
+6a50dae008ef0411562affe4;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;55;3 - FARMA SP;VENDA MAIS NEOQ - SP! 10/07;PARTIAL;15;2026-07-10 08:43:29;2;13;0;0;broadcasts
+6a50e12d9491e84d6c0bb3c8;91392;4.3.08 ELIELTON FRAGA 06/12/21;92;6 - FARMA PR;VENDA MAIS NEOQ - PR! 10/07;PARTIAL;92;2026-07-10 09:10:21;88;4;0;0;broadcasts
+6a50e5be08ef0411562afff1;91369;2.1.05 ADEILDO SILVA 18/06/18;70;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;SUCCESS;10;2026-07-10 09:29:51;10;0;0;0;broadcasts
+6a50ea0f9491e84d6c0bb3db;90179;2.2.08 NARAYANE ALMEIDA 13/04/26;59;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;SUCCESS;11;2026-07-10 09:48:15;11;0;0;0;broadcasts
+6a50eab39491e84d6c0bb3dd;91369;2.1.05 ADEILDO SILVA 18/06/18;70;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;SUCCESS;1;2026-07-10 09:50:59;1;0;0;0;broadcasts
+6a50ed4b9491e84d6c0bb417;93931;2.2.06 MORGANA RODRIGUES 21/05/18;58;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;PARTIAL;58;2026-07-10 10:02:04;50;8;0;0;broadcasts
+6a50f14e9491e84d6c0bb421;93895;2.2.14 DAVID ALVES 08/06/26;74;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;PARTIAL;9;2026-07-10 10:19:11;8;1;0;0;broadcasts
+6a50f2ac9491e84d6c0bb45c;94028;2.2.09 ROBERTO MORAIS 10/11/25;59;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;PARTIAL;59;2026-07-10 10:25:00;48;11;0;0;broadcasts
+6a50f36908ef0411562b0007;90178;2.2.10 DANIEL ALVES 08/06/26;44;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;PARTIAL;10;2026-07-10 10:28:09;9;1;0;0;broadcasts
+6a50f3a69491e84d6c0bb467;90178;2.2.10 DANIEL ALVES 08/06/26;44;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;PARTIAL;12;2026-07-10 10:29:10;8;4;0;0;broadcasts
+6a50f4ce08ef0411562b0014;90178;2.2.10 DANIEL ALVES 08/06/26;44;1 - FARMA GO;VENDA MAIS NEOQ - GO! 10/07;PARTIAL;12;2026-07-10 10:34:07;11;1;0;0;broadcasts
+6a5119219491e84d6c0bb4c2;93565;1.1.05 WELLINGTON SILVA 02/02/17;91;3 - FARMA SP;PROMO GERMED SP;PARTIAL;91;2026-07-10 13:09:06;78;13;0;0;broadcasts
+6a5161bb08ef0411562b0040;90135;1.5.02 DANIEL INACIO 22/04/26;119;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;10;2026-07-10 18:18:51;10;0;0;0;broadcasts
+6a51621f08ef0411562b004b;90135;1.5.02 DANIEL INACIO 22/04/26;119;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;10;2026-07-10 18:20:31;10;0;0;0;broadcasts
+6a51628d08ef0411562b0056;90135;1.5.02 DANIEL INACIO 22/04/26;119;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;10;2026-07-10 18:22:22;10;0;0;0;broadcasts
+6a51634208ef0411562b006d;90135;1.5.02 DANIEL INACIO 22/04/26;119;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;22;2026-07-10 18:25:23;22;0;0;0;broadcasts
+6a5164ac9491e84d6c0bb4ea;90135;1.5.02 DANIEL INACIO 22/04/26;119;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;19;2026-07-10 18:31:24;19;0;0;0;broadcasts
+6a52482e9491e84d6c0bb84e;90654;1.5.13 HERICA SOUZA 16/09/24;68;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;1;2026-07-11 10:42:06;1;0;0;0;broadcasts
+6a54c7ff9491e84d6c0bbcfd;94295;1.5.03 ANGELO OLIVEIRA 09/12/24;126;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;126;2026-07-13 08:11:59;78;48;0;0;broadcasts
+6a54ca87732588352bf40c50;93916;1.4.08 LUIZ FREIXEDELO 01/06/15;71;3 - FARMA SP;PROMO GERMED SP;PARTIAL;71;2026-07-13 08:22:47;65;6;0;0;broadcasts
+6a54ca97732588352bf40c96;93916;1.4.08 LUIZ FREIXEDELO 01/06/15;71;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;71;2026-07-13 08:23:03;65;6;0;0;broadcasts
+6a54cae4732588352bf40ce3;90517;1.3.08 KARLOS EDUARDO 01/02/16;85;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;85;2026-07-13 08:24:21;32;53;0;0;broadcasts
+6a54cbdd732588352bf40d64;90338;1.4.10 TATIANE LINO 03/07/17;130;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;130;2026-07-13 08:28:29;6;124;0;0;broadcasts
+6a54ce89732588352bf40d73;90136;1.5.01 ANDREZA SOUZA 25/08/25;98;3 - FARMA SP;PROMO GERMED SP;PARTIAL;10;2026-07-13 08:39:54;6;4;0;0;broadcasts
+6a54cf78732588352bf40dd6;90136;1.5.01 ANDREZA SOUZA 25/08/25;98;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;98;2026-07-13 08:43:53;10;88;0;0;broadcasts
+6a54d177732588352bf40de1;90764;1.3.02 PEDRO LUIS 16/08/21;71;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;6;2026-07-13 08:52:24;6;0;0;0;broadcasts
+6a54d301732588352bf40de8;90764;1.3.02 PEDRO LUIS 16/08/21;71;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;1;2026-07-13 08:58:58;1;0;0;0;broadcasts
+6a54d4969491e84d6c0bbdf3;91392;4.3.08 ELIELTON FRAGA 06/12/21;94;6 - FARMA PR;MEGA PROMO - PR;PARTIAL;94;2026-07-13 09:05:42;89;5;0;0;broadcasts
+6a54d8999491e84d6c0bbdff;90199;2.2.03 DIOGO ROCHA 08/06/26;49;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;9;2026-07-13 09:22:50;9;0;0;0;broadcasts
+6a54d8c6732588352bf40df6;90199;2.2.03 DIOGO ROCHA 08/06/26;49;1 - FARMA GO;MEGA PROMO - GO;PARTIAL;9;2026-07-13 09:23:34;8;1;0;0;broadcasts
+6a54d8f4732588352bf40e00;90199;2.2.03 DIOGO ROCHA 08/06/26;49;1 - FARMA GO;MEGA PROMO - GO;PARTIAL;9;2026-07-13 09:24:21;8;1;0;0;broadcasts
+6a54d925732588352bf40e0a;90199;2.2.03 DIOGO ROCHA 08/06/26;49;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;9;2026-07-13 09:25:09;9;0;0;0;broadcasts
+6a54dedb9491e84d6c0bbe3f;94028;2.2.09 ROBERTO MORAIS 10/11/25;60;1 - FARMA GO;MEGA PROMO - GO;PARTIAL;60;2026-07-13 09:49:31;48;12;0;0;broadcasts
+6a54df2e732588352bf40e16;90179;2.2.08 NARAYANE ALMEIDA 13/04/26;63;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;10;2026-07-13 09:50:54;10;0;0;0;broadcasts
+6a54ef129491e84d6c0bbe54;90960;1.2.03 RITA SOUSA 08/08/22;78;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;13;2026-07-13 10:58:43;13;0;0;0;broadcasts
+6a54fa78732588352bf40e6b;93642;1.1.10 THIAGO MULATO 05/04/17;73;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;73;2026-07-13 11:47:20;60;13;0;0;broadcasts
+6a54fba69491e84d6c0bbe90;91805;3.1.08 PAMELA OLIVEIRA 22/10/24;62;5 - FARMA RJ;MEGA PROMO - RJ;PARTIAL;62;2026-07-13 11:52:23;52;10;0;0;broadcasts
+6a54ff4f732588352bf40eae;93931;2.2.06 MORGANA RODRIGUES 21/05/18;60;1 - FARMA GO;MEGA PROMO - GO;PARTIAL;60;2026-07-13 12:08:00;52;8;0;0;broadcasts
+6a5501ec9491e84d6c0bbee9;90921;3.2.10 ALEXANDRE SILVA 01/09/17;83;5 - FARMA RJ;MEGA PROMO - RJ;PARTIAL;83;2026-07-13 12:19:08;78;5;0;0;broadcasts
+6a5501f09491e84d6c0bbeec;90199;2.2.03 DIOGO ROCHA 08/06/26;49;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;2;2026-07-13 12:19:12;2;0;0;0;broadcasts
+6a55061e732588352bf40ec1;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;15;2026-07-13 12:37:02;14;1;0;0;broadcasts
+6a55066b9491e84d6c0bbefc;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;14;2026-07-13 12:38:20;14;0;0;0;broadcasts
+6a5506b39491e84d6c0bbf0b;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;14;2026-07-13 12:39:31;13;1;0;0;broadcasts
+6a5506f59491e84d6c0bbf1b;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;15;2026-07-13 12:40:37;15;0;0;0;broadcasts
+6a5507309491e84d6c0bbf2b;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;15;2026-07-13 12:41:36;14;1;0;0;broadcasts
+6a55077e9491e84d6c0bbf39;90213;1.1.13 FABIO MORAIS 08/06/26;113;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;13;2026-07-13 12:42:55;12;1;0;0;broadcasts
+6a5513cf732588352bf40ed4;91369;2.1.05 ADEILDO SILVA 18/06/18;71;1 - FARMA GO;MEGA PROMO - GO;SUCCESS;9;2026-07-13 13:35:27;9;0;0;0;broadcasts
+6a5514a39491e84d6c0bbf4f;94286;1.1.04 MARILENE SILVA 21/03/22;90;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;18;2026-07-13 13:39:00;13;5;0;0;broadcasts
+6a551754732588352bf40edf;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;PROMO GERMED GO;PARTIAL;9;2026-07-13 13:50:29;8;1;0;0;broadcasts
+6a551780732588352bf40ee9;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;PROMO GERMED GO;PARTIAL;9;2026-07-13 13:51:13;8;1;0;0;broadcasts
+6a5517a5732588352bf40ef3;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;PROMO GERMED GO;SUCCESS;9;2026-07-13 13:51:49;9;0;0;0;broadcasts
+6a5517f9732588352bf40efc;90199;2.2.03 DIOGO ROCHA 08/06/26;50;1 - FARMA GO;PROMO GERMED GO;PARTIAL;8;2026-07-13 13:53:13;7;1;0;0;broadcasts
+6a5518d59491e84d6c0bbf64;90264;1.5.12 CARLOS CESAR 09/09/24;119;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;18;2026-07-13 13:56:53;18;0;0;0;broadcasts
+6a5535ef9491e84d6c0bbfd5;94363;1.1.14 JOSE GONÇALVES 23/06/25;112;3 - FARMA SP;MEGA OFERTA - SP;PARTIAL;112;2026-07-13 16:01:04;51;61;0;0;broadcasts
+6a55453a9491e84d6c0bbfda;90960;1.2.03 RITA SOUSA 08/08/22;78;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;1;2026-07-13 17:06:18;1;0;0;0;broadcasts
+6a55456d9491e84d6c0bbfdc;90960;1.2.03 RITA SOUSA 08/08/22;78;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;1;2026-07-13 17:07:09;1;0;0;0;broadcasts
+6a554787b8f2b538e363963f;90135;1.5.02 DANIEL INACIO 22/04/26;119;3 - FARMA SP;MEGA OFERTA - SP;SUCCESS;8;2026-07-13 17:16:08;8;0;0;0;broadcasts
+6a5623d7a1ec7b2049d0a3d4;90121;1.2.09 VANESSA COSTA 23/10/23;103;3 - FARMA SP;TA BOMBANDO HPC: HERBISSIMO;SUCCESS;12;2026-07-14 08:56:07;12;0;0;0;broadcasts
+6a562745a1ec7b2049d0a491;90519;1.2.13 ETNA SANTOS 04/05/16;193;3 - FARMA SP;TA BOMBANDO HPC: HERBISSIMO;PARTIAL;193;2026-07-14 09:10:46;32;161;0;0;broadcasts
+6a562f4fa1ec7b2049d0a4a3;90213;1.1.13 FABIO MORAIS 08/06/26;114;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;PARTIAL;15;2026-07-14 09:45:03;14;1;0;0;broadcasts
+6a562f7ca1ec7b2049d0a4b1;90213;1.1.13 FABIO MORAIS 08/06/26;114;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;PARTIAL;13;2026-07-14 09:45:48;12;1;0;0;broadcasts
+6a562fac9491e84d6c0bca5c;90213;1.1.13 FABIO MORAIS 08/06/26;114;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;PARTIAL;15;2026-07-14 09:46:37;14;1;0;0;broadcasts
+6a562fe69491e84d6c0bca6c;90213;1.1.13 FABIO MORAIS 08/06/26;114;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;PARTIAL;15;2026-07-14 09:47:34;14;1;0;0;broadcasts
+6a5630299491e84d6c0bca7c;90213;1.1.13 FABIO MORAIS 08/06/26;114;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;SUCCESS;15;2026-07-14 09:48:41;15;0;0;0;broadcasts
+6a563074a1ec7b2049d0a4c1;90213;1.1.13 FABIO MORAIS 08/06/26;114;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;SUCCESS;15;2026-07-14 09:49:56;15;0;0;0;broadcasts
+6a563736a1ec7b2049d0a4c4;90352;1.6.06 ADEMAR FERREIRA 02/05/23;101;3 - FARMA SP;PROMO BIOSINTETICA - SP;SUCCESS;1;2026-07-14 10:18:47;1;0;0;0;broadcasts
+6a563ae0a1ec7b2049d0a541;93899;1.5.04 ALEXANDRE LOUBACK 13/01/25;126;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;PARTIAL;126;2026-07-14 10:34:25;116;10;0;0;broadcasts
+6a564516a1ec7b2049d0a555;90297;1.3.05 JOSE SIMAO 06/03/19;176;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;PARTIAL;13;2026-07-14 11:17:59;12;1;0;0;broadcasts
+6a564531a1ec7b2049d0a55e;90352;1.6.06 ADEMAR FERREIRA 02/05/23;101;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;SUCCESS;8;2026-07-14 11:18:26;8;0;0;0;broadcasts
+6a56459ca1ec7b2049d0a568;90352;1.6.06 ADEMAR FERREIRA 02/05/23;101;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;SUCCESS;9;2026-07-14 11:20:13;9;0;0;0;broadcasts
+6a5651fc9491e84d6c0bcaca;93931;2.2.06 MORGANA RODRIGUES 21/05/18;60;1 - FARMA GO;MEGA PROMO GO;PARTIAL;60;2026-07-14 12:13:00;52;8;0;0;broadcasts
+6a56545c9491e84d6c0bcb2c;91392;4.3.08 ELIELTON FRAGA 06/12/21;94;6 - FARMA PR;POTENCIALIZA PHARLAB - PR;PARTIAL;94;2026-07-14 12:23:09;89;5;0;0;broadcasts
+6a565f9da1ec7b2049d0a9ac;94286;1.1.04 MARILENE SILVA 21/03/22;90;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;29;2026-07-14 13:11:10;26;3;0;0;broadcasts
+6a5662c59491e84d6c0bcb37;93613;1.2.12 DIEGO AGUIAR 08/09/25;110;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;8;2026-07-14 13:24:37;7;1;0;0;broadcasts
+6a56641e9491e84d6c0bcb54;90320;1.1.08 ANDERSON SILVA 08/05/23;77;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;28;2026-07-14 13:30:23;28;0;0;0;broadcasts
+6a566d439491e84d6c0bcb62;90199;2.2.03 DIOGO ROCHA 08/06/26;47;1 - FARMA GO;POTENCIALIZA PHARLAB - GO;SUCCESS;9;2026-07-14 14:09:23;9;0;0;0;broadcasts
+6a566d83a1ec7b2049d0a9be;90199;2.2.03 DIOGO ROCHA 08/06/26;47;1 - FARMA GO;POTENCIALIZA PHARLAB - GO;PARTIAL;9;2026-07-14 14:10:28;8;1;0;0;broadcasts
+6a566e19a1ec7b2049d0a9c8;90199;2.2.03 DIOGO ROCHA 08/06/26;47;1 - FARMA GO;POTENCIALIZA PHARLAB - GO;SUCCESS;9;2026-07-14 14:12:57;9;0;0;0;broadcasts
+6a566e60a1ec7b2049d0a9d2;90199;2.2.03 DIOGO ROCHA 08/06/26;47;1 - FARMA GO;POTENCIALIZA PHARLAB - GO;SUCCESS;9;2026-07-14 14:14:09;9;0;0;0;broadcasts
+6a5673c39491e84d6c0bcd4a;93565;1.1.05 WELLINGTON SILVA 02/02/17;89;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;12;2026-07-14 14:37:07;11;1;0;0;broadcasts
+6a5677237b14430e158b261e;94362;1.1.02 PAULO SANTOS 08/05/23;81;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;81;2026-07-14 14:51:31;76;5;0;0;broadcasts
+6a56799f7b14430e158b2672;94099;3.2.03 ALEXANDRE VIEIRA 08/05/23;97;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;97;2026-07-14 15:02:07;72;25;0;0;broadcasts
+6a567ae77b14430e158b269d;91719;4.4.05 AGENOR MELO 08/06/20;41;6 - FARMA PR;MEGA OFERTA PR;FAILED;41;2026-07-14 15:07:36;0;41;0;0;broadcasts
+6a567b687b14430e158b26a2;93691;3.2.09 DANIELLE MARTINS 13/07/26;62;5 - FARMA RJ;MEGA OFERTA RJ;SUCCESS;1;2026-07-14 15:09:44;1;0;0;0;broadcasts
+6a567dcc7b14430e158b26a8;94095;3.2.02 MARCELO ALVES 09/03/26;85;5 - FARMA RJ;MEGA OFERTA RJ;SUCCESS;3;2026-07-14 15:19:56;3;0;0;0;broadcasts
+6a567dfe9491e84d6c0bcd54;90960;1.2.03 RITA SOUSA 08/08/22;73;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;1;2026-07-14 15:20:46;1;0;0;0;broadcasts
+6a5680917b14430e158b2701;90921;3.2.10 ALEXANDRE SILVA 01/09/17;83;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;83;2026-07-14 15:31:46;77;6;0;0;broadcasts
+6a5682b17b14430e158b271a;94286;1.1.04 MARILENE SILVA 21/03/22;90;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;23;2026-07-14 15:40:49;18;5;0;0;broadcasts
+6a568d789491e84d6c0bcd93;93642;1.1.10 THIAGO MULATO 05/04/17;81;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;42;2026-07-14 16:26:48;40;2;0;0;broadcasts
+6a56914b9491e84d6c0bcdd2;94028;2.2.09 ROBERTO MORAIS 10/11/25;60;1 - FARMA GO;MEGA PROMO GO;PARTIAL;60;2026-07-14 16:43:07;48;12;0;0;broadcasts
+6a56973b7b14430e158b2787;90902;3.1.02 MAURO LOPES 06/03/23;74;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;74;2026-07-14 17:08:27;68;6;0;0;broadcasts
+6a56975c9491e84d6c0bce18;93895;2.2.14 DAVID ALVES 08/06/26;74;1 - FARMA GO;MEGA PROMO GO;SUCCESS;9;2026-07-14 17:09:00;9;0;0;0;broadcasts
+6a5697ee9491e84d6c0bce4a;90903;3.1.03 LUIZ AZEVEDO 03/04/18;54;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;54;2026-07-14 17:11:27;46;8;0;0;broadcasts
+6a56984f9491e84d6c0bce81;90898;3.4.04 THAIZA SANTOS 18/02/26;72;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;72;2026-07-14 17:13:03;3;69;0;0;broadcasts
+6a5698769491e84d6c0bcea8;91462;2.4.08 FRANCISCO OLIVEIRA 10/11/25;44;2 - FARMA DF;MEGA OFERTA DF;PARTIAL;44;2026-07-14 17:13:42;10;34;0;0;broadcasts
+6a569a057b14430e158b2794;90190;2.4.02 ANA FLAVIA BARBOSA 19/08/24;45;1 - FARMA GO;MEGA PROMO GO;PARTIAL;8;2026-07-14 17:20:21;7;1;0;0;broadcasts
+6a569dcc9491e84d6c0bcefd;91718;3.4.02 SANDRO NEVES 15/07/24;74;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;74;2026-07-14 17:36:29;69;5;0;0;broadcasts
+6a56a03a7b14430e158b27ab;94355;1.1.12 MATHEUS AZEVEDO 04/07/22;95;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;11;2026-07-14 17:46:51;10;1;0;0;broadcasts
+6a56a2f57b14430e158b27c2;90264;1.5.12 CARLOS CESAR 09/09/24;119;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;16;2026-07-14 17:58:29;16;0;0;0;broadcasts
+6a56a7fa7b14430e158b2c59;94293;1.6.03 AREDIO PARREIRA 19/02/24;117;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;117;2026-07-14 18:19:55;117;0;0;0;broadcasts
+6a56a8bd7b14430e158b2c67;90855;1.6.04 IVANILDO SANTOS 08/07/24;95;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;12;2026-07-14 18:23:10;12;0;0;0;broadcasts
+6a56ad8b7b14430e158b2cd0;90231;1.1.07 LUCIANA SILVA 03/11/25;79;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;79;2026-07-14 18:43:39;61;18;0;0;broadcasts
+6a56b1457b14430e158b2cd8;90319;1.3.03 RENATO LOPES 15/08/16;78;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;1;2026-07-14 18:59:34;1;0;0;0;broadcasts`;
+
+// ================= RELATÓRIO DE DISPAROS (agregado por disparo) — 15 a 17/Jul/2026 (parcial, semana em andamento) =================
+// colunas: ID;Codigo;Vendedor;Base;Filial;Lista;Status;Qtd;Data;Sucesso;Falha;Expirado;Outros;Colecao
+const REL_CSV_W3=`ID;Codigo;Vendedor;Base;Filial;Lista;Status;Qtd;Data;Sucesso;Falha;Expirado;Outros;Colecao
+6a576f8903c61541370beab5;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB - GO;SUCCESS;9;2026-07-15 08:31:22;9;0;0;0;broadcasts
+6a576fad03c61541370beabf;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB - GO;PARTIAL;9;2026-07-15 08:31:57;8;1;0;0;broadcasts
+6a576fe503c61541370beac9;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB - GO;SUCCESS;9;2026-07-15 08:32:53;9;0;0;0;broadcasts
+6a57700603c61541370bead3;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB - GO;SUCCESS;9;2026-07-15 08:33:26;9;0;0;0;broadcasts
+6a57717c03c61541370bead7;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB - GO;SUCCESS;3;2026-07-15 08:39:41;3;0;0;0;broadcasts
+6a5772ae03c61541370bead9;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB - GO;SUCCESS;1;2026-07-15 08:44:46;1;0;0;0;broadcasts
+6a57739a9491e84d6c0bd62c;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB - GO;SUCCESS;1;2026-07-15 08:48:42;1;0;0;0;broadcasts
+6a5775ea9491e84d6c0bd638;90179;2.2.08 NARAYANE ALMEIDA 13/04/26;;1 - FARMA GO;MEGA PROMO GO;SUCCESS;10;2026-07-15 08:58:34;10;0;0;0;broadcasts
+6a577cc003c61541370beb3c;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;POTENCIALIZA PHARLAB - PR;PARTIAL;94;2026-07-15 09:27:44;89;5;0;0;broadcasts
+6a57801b9491e84d6c0bd645;90654;1.5.13 HERICA SOUZA 16/09/24;;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;1;2026-07-15 09:42:04;1;0;0;0;broadcasts
+6a5785ce03c61541370beb7f;91805;3.1.08 PAMELA OLIVEIRA 22/10/24;;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;71;2026-07-15 10:06:23;57;14;0;0;broadcasts
+6a57866d9491e84d6c0bd682;93931;2.2.06 MORGANA RODRIGUES 21/05/18;;1 - FARMA GO;MEGA PROMO GO;PARTIAL;60;2026-07-15 10:09:01;51;9;0;0;broadcasts
+6a5786b703c61541370bebc0;91803;3.1.05 CARLOS OLIVIERI 04/03/24;;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;75;2026-07-15 10:10:15;50;25;0;0;broadcasts
+6a57873203c61541370bec07;91927;2.3.04 JOSE OLIVEIRA 14/02/24;;1 - FARMA GO;MEGA PROMO GO;PARTIAL;71;2026-07-15 10:12:19;69;2;0;0;broadcasts
+6a57917d9491e84d6c0bd69a;91354;2.1.10 RAQUEL RODRIGUES 09/10/23;;1 - FARMA GO;MEGA PROMO GO;PARTIAL;15;2026-07-15 10:56:13;14;1;0;0;broadcasts
+6a5791ce03c61541370bec23;91354;2.1.10 RAQUEL RODRIGUES 09/10/23;;1 - FARMA GO;MEGA PROMO GO;SUCCESS;15;2026-07-15 10:57:34;15;0;0;0;broadcasts
+6a5792509491e84d6c0bd6af;91354;2.1.10 RAQUEL RODRIGUES 09/10/23;;1 - FARMA GO;MEGA PROMO GO;PARTIAL;19;2026-07-15 10:59:45;18;1;0;0;broadcasts
+6a57928603c61541370bec28;91354;2.1.10 RAQUEL RODRIGUES 09/10/23;;1 - FARMA GO;MEGA PROMO GO;SUCCESS;2;2026-07-15 11:00:38;2;0;0;0;broadcasts
+6a57935503c61541370bec3a;90960;1.2.03 RITA SOUSA 08/08/22;;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;16;2026-07-15 11:04:06;16;0;0;0;broadcasts
+6a5794df03c61541370bec4c;90862;1.5.09 RAFAEL VICENTE 05/07/21;;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;17;2026-07-15 11:10:39;17;0;0;0;broadcasts
+6a5799f49491e84d6c0bd701;91714;3.4.08 MARCOS DE 12/08/19;;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;75;2026-07-15 11:32:20;72;3;0;0;broadcasts
+6a57aba803c61541370bef71;91369;2.1.05 ADEILDO SILVA 18/06/18;;1 - FARMA GO;POTENCIALIZA PHARLAB - GO;SUCCESS;19;2026-07-15 12:47:52;19;0;0;0;broadcasts
+6a57bbb19491e84d6c0bd878;91148;3.1.04 FELIX SA 06/11/17;;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;61;2026-07-15 13:56:18;54;7;0;0;broadcasts
+6a57c01b03c61541370bef8d;90855;1.6.04 IVANILDO SANTOS 08/07/24;;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;9;2026-07-15 14:15:07;9;0;0;0;broadcasts
+6a57c37c9491e84d6c0bd87f;93907;2.5.00 FABIANE - MC 19/01/26;;1 - FARMA GO;MEGA PROMO GO;SUCCESS;3;2026-07-15 14:29:32;3;0;0;0;broadcasts
+6a57c48803c61541370befd3;90902;3.1.02 MAURO LOPES 06/03/23;;5 - FARMA RJ;MEGA OFERTA RJ;PARTIAL;74;2026-07-15 14:34:01;68;6;0;0;broadcasts
+6a57c6819491e84d6c0bd88d;90352;1.6.06 ADEMAR FERREIRA 02/05/23;;3 - FARMA SP;PROMO BIOSINTETICA - SP;SUCCESS;9;2026-07-15 14:42:25;9;0;0;0;broadcasts
+6a57c6d59491e84d6c0bd890;93895;2.2.14 DAVID ALVES 08/06/26;;1 - FARMA GO;MEGA PROMO GO;PARTIAL;2;2026-07-15 14:43:49;1;1;0;0;broadcasts
+6a57c79d9491e84d6c0bd8d2;90767;1.6.07 MARCOS GALINDO 04/01/17;;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;SUCCESS;11;2026-07-15 14:47:10;11;0;0;0;broadcasts
+6a57c8cc03c61541370befe8;90310;1.6.12 DIVALDO SILVA - 02/24;;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;18;2026-07-15 14:52:12;18;0;0;0;broadcasts
+6a57ceab9491e84d6c0bd8e2;93893;2.4.05 BRUNO MONTEIRO 22/09/25;;2 - FARMA DF;POTENCIALIZA PHARLAB - DF;SUCCESS;10;2026-07-15 15:17:15;10;0;0;0;broadcasts
+6a57d36a9491e84d6c0bd8ed;94471;1.4.02 ANDREIA COELHO 22/04/26;;3 - FARMA SP;PROMO BIOSINTETICA - SP;SUCCESS;4;2026-07-15 15:37:31;4;0;0;0;broadcasts
+6a57d9269491e84d6c0bd8ff;94471;1.4.02 ANDREIA COELHO 22/04/26;;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;PARTIAL;11;2026-07-15 16:01:59;10;1;0;0;broadcasts
+6a57dcd89491e84d6c0bd90e;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;;6 - FARMA PR;MEGA OFERTA PR;SUCCESS;7;2026-07-15 16:17:44;7;0;0;0;broadcasts
+6a57deab03c61541370bf00e;94471;1.4.02 ANDREIA COELHO 22/04/26;;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;SUCCESS;6;2026-07-15 16:25:31;6;0;0;0;broadcasts
+6a57df6303c61541370bf011;94471;1.4.02 ANDREIA COELHO 22/04/26;;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;SUCCESS;1;2026-07-15 16:28:35;1;0;0;0;broadcasts
+6a57e0c89491e84d6c0bd91f;90135;1.5.02 DANIEL INACIO 22/04/26;;3 - FARMA SP;PROMO BIOSINTETICA - SP;SUCCESS;10;2026-07-15 16:34:33;10;0;0;0;broadcasts
+6a57e1029491e84d6c0bd924;94471;1.4.02 ANDREIA COELHO 22/04/26;;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;SUCCESS;3;2026-07-15 16:35:30;3;0;0;0;broadcasts
+6a57e11203c61541370bf022;90135;1.5.02 DANIEL INACIO 22/04/26;;3 - FARMA SP;PROMO BIOSINTETICA - SP;SUCCESS;16;2026-07-15 16:35:46;16;0;0;0;broadcasts
+6a57e1819491e84d6c0bd940;90135;1.5.02 DANIEL INACIO 22/04/26;;3 - FARMA SP;PROMO BIOSINTETICA - SP;SUCCESS;27;2026-07-15 16:37:38;27;0;0;0;broadcasts
+6a57e3ab03c61541370bf07a;91698;1.5.08 MARCELO GOMES 02/09/19;;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;90;2026-07-15 16:46:51;62;28;0;0;broadcasts
+6a57e55703c61541370bf082;90773;2.4.10 GABRIEL LOPES 19/01/26;;1 - FARMA GO;POTENCIALIZA PHARLAB - GO;PARTIAL;6;2026-07-15 16:53:59;4;2;0;0;broadcasts
+6a57ea3b9491e84d6c0bd95b;90340;1.6.09 ANGELA MOREIRA 21/07/25;;3 - FARMA SP;PROMO BIOSINTETICA - SP;SUCCESS;9;2026-07-15 17:14:51;9;0;0;0;broadcasts
+6a57f8c703c61541370bf5c0;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;PROMO TEUTO - PR;PARTIAL;94;2026-07-15 18:16:56;89;5;0;0;broadcasts
+6a57f92603c61541370bf5cb;94351;1.6.01 RAFAEL VENCESLAU 13/02/23;;3 - FARMA SP;POTENCIALIZA PHARLAB - SP;SUCCESS;10;2026-07-15 18:18:30;10;0;0;0;broadcasts
+6a58064103c61541370bf64c;94295;1.5.03 ANGELO OLIVEIRA 09/12/24;;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;126;2026-07-15 19:14:25;78;48;0;0;broadcasts
+6a58097a03c61541370bf675;90544;1.2.07 KLEBER MOLINA 22/02/21;;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;39;2026-07-15 19:28:11;1;38;0;0;broadcasts
+6a58c0369491e84d6c0be1e9;91718;3.4.02 SANDRO NEVES 15/07/24;;5 - FARMA RJ;VENDA MAIS NEOQ - RJ! 16 E 17/07;PARTIAL;74;2026-07-16 08:27:50;68;6;0;0;broadcasts
+6a58c03a9491e84d6c0be1f2;90190;2.4.02 ANA FLAVIA BARBOSA 19/08/24;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;SUCCESS;8;2026-07-16 08:27:55;8;0;0;0;broadcasts
+6a58c8a59491e84d6c0be1fe;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;SUCCESS;9;2026-07-16 09:03:49;9;0;0;0;broadcasts
+6a58c8bf9491e84d6c0be208;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;PARTIAL;9;2026-07-16 09:04:16;8;1;0;0;broadcasts
+6a58c8f79491e84d6c0be212;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;SUCCESS;9;2026-07-16 09:05:12;9;0;0;0;broadcasts
+6a58c9229491e84d6c0be21c;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;SUCCESS;9;2026-07-16 09:05:55;9;0;0;0;broadcasts
+6a58cd3cb17dac66ab95aafd;90231;1.1.07 LUCIANA SILVA 03/11/25;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;67;2026-07-16 09:23:24;56;11;0;0;broadcasts
+6a58cdcb9491e84d6c0be236;94286;1.1.04 MARILENE SILVA 21/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;25;2026-07-16 09:25:47;23;2;0;0;broadcasts
+6a58d0aab17dac66ab95ab08;90179;2.2.08 NARAYANE ALMEIDA 13/04/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;SUCCESS;10;2026-07-16 09:38:02;10;0;0;0;broadcasts
+6a58d175b17dac66ab95ab38;90903;3.1.03 LUIZ AZEVEDO 03/04/18;;5 - FARMA RJ;VENDA MAIS NEOQ - RJ! 16 E 17/07;PARTIAL;52;2026-07-16 09:41:25;47;5;0;0;broadcasts
+6a58d190b17dac66ab95ab3a;93691;3.2.09 DANIELLE MARTINS 13/07/26;;5 - FARMA RJ;VENDA MAIS NEOQ - RJ! 16 E 17/07;SUCCESS;1;2026-07-16 09:41:53;1;0;0;0;broadcasts
+6a58d3059491e84d6c0be245;93691;3.2.09 DANIELLE MARTINS 13/07/26;;5 - FARMA RJ;VENDA MAIS NEOQ - RJ! 16 E 17/07;PARTIAL;10;2026-07-16 09:48:05;5;5;0;0;broadcasts
+6a58d5929491e84d6c0be368;90898;3.4.04 THAIZA SANTOS 18/02/26;;5 - FARMA RJ;VENDA MAIS NEOQ - RJ! 16 E 17/07;PARTIAL;69;2026-07-16 09:58:58;9;60;0;0;broadcasts
+6a58d636b17dac66ab95abdf;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;VENDA MAIS NEOQ - PR! 16 E 17/07;PARTIAL;92;2026-07-16 10:01:43;88;4;0;0;broadcasts
+6a58e1b99491e84d6c0be3c2;94363;1.1.14 JOSE GONÇALVES 23/06/25;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;97;2026-07-16 10:50:49;48;49;0;0;broadcasts
+6a58e4ed9491e84d6c0be406;93931;2.2.06 MORGANA RODRIGUES 21/05/18;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;PARTIAL;58;2026-07-16 11:04:30;51;7;0;0;broadcasts
+6a58ef9b9100911b837d59ce;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;SUCCESS;15;2026-07-16 11:50:04;15;0;0;0;broadcasts
+6a58efc29100911b837d59de;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;SUCCESS;15;2026-07-16 11:50:42;15;0;0;0;broadcasts
+6a58f00a9100911b837d59ee;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;15;2026-07-16 11:51:54;13;2;0;0;broadcasts
+6a58f0469100911b837d59fd;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;SUCCESS;14;2026-07-16 11:52:54;14;0;0;0;broadcasts
+6a58f09a2ec77a46f3005011;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;SUCCESS;14;2026-07-16 11:54:18;14;0;0;0;broadcasts
+6a5920b29100911b837d5f11;94028;2.2.09 ROBERTO MORAIS 10/11/25;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;PARTIAL;59;2026-07-16 15:19:30;47;12;0;0;broadcasts
+6a5926d99100911b837d5f1f;94471;1.4.02 ANDREIA COELHO 22/04/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;SUCCESS;10;2026-07-16 15:45:46;10;0;0;0;broadcasts
+6a592f4a4c0db77321c2943f;90920;3.2.08 DAISY OLIVEIRA 15/06/26;;5 - FARMA RJ;VENDA MAIS NEOQ - RJ! 16 E 17/07;SUCCESS;1;2026-07-16 16:21:46;1;0;0;0;broadcasts
+6a59306e9100911b837d616b;90920;3.2.08 DAISY OLIVEIRA 15/06/26;;5 - FARMA RJ;MEGA OFERTA RJ;SUCCESS;1;2026-07-16 16:26:39;1;0;0;0;broadcasts
+6a593ef59100911b837d65a3;90320;1.1.08 ANDERSON SILVA 08/05/23;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;63;2026-07-16 17:28:37;61;2;0;0;broadcasts
+6a5941a94c0db77321c29802;90340;1.6.09 ANGELA MOREIRA 21/07/25;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;51;2026-07-16 17:40:09;47;4;0;0;broadcasts
+6a594cc34c0db77321c29830;90310;1.6.12 DIVALDO SILVA - 02/24;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;SUCCESS;1;2026-07-16 18:27:31;1;0;0;0;broadcasts
+6a594df69100911b837d675c;91719;4.4.05 AGENOR MELO 08/06/20;;6 - FARMA PR;VENDA MAIS NEOQ - SC! 16 E 17/07;SUCCESS;1;2026-07-16 18:32:38;1;0;0;0;broadcasts
+6a5953624c0db77321c29b91;94351;1.6.01 RAFAEL VENCESLAU 13/02/23;;3 - FARMA SP;MEGA OFERTA SP;SUCCESS;1;2026-07-16 18:55:47;1;0;0;0;broadcasts
+6a5a0c639100911b837d6c2f;91518;4.1.03 MARCELO DAGOSTIN 02/03/26;;6 - FARMA PR;PROMO TEUTO - PR;SUCCESS;9;2026-07-17 08:05:08;9;0;0;0;broadcasts
+6a5a0e2b9100911b837d6c3c;90131;1.4.01 LUIZ RODRIGUES 06/05/24;;3 - FARMA SP;MEGA OFERTA SP;PARTIAL;10;2026-07-17 08:12:44;8;2;0;0;broadcasts
+6a5a16a54c0db77321c2a35f;91927;2.3.04 JOSE OLIVEIRA 14/02/24;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;PARTIAL;68;2026-07-17 08:48:53;67;1;0;0;broadcasts
+6a5a16aa4c0db77321c2a369;93895;2.2.14 DAVID ALVES 08/06/26;;1 - FARMA GO;MEGA PROMO GO;FAILED;9;2026-07-17 08:48:59;0;9;0;0;broadcasts
+6a5a1a7d4c0db77321c2a3c8;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;PROMO NATULAB - PR;PARTIAL;94;2026-07-17 09:05:17;89;5;0;0;broadcasts
+6a5a1daf9100911b837d6c4e;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;SUCCESS;9;2026-07-17 09:18:55;9;0;0;0;broadcasts
+6a5a1dd19100911b837d6c58;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;PARTIAL;9;2026-07-17 09:19:30;8;1;0;0;broadcasts
+6a5a1dfd9100911b837d6c62;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;SUCCESS;9;2026-07-17 09:20:14;9;0;0;0;broadcasts
+6a5a1e429100911b837d6c6c;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;SUCCESS;8;2026-07-17 09:21:22;8;0;0;0;broadcasts
+6a5a202f4c0db77321c2a3d9;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;10;2026-07-17 09:29:35;9;1;0;0;broadcasts
+6a5a20734c0db77321c2a3e4;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;10;2026-07-17 09:30:44;9;1;0;0;broadcasts
+6a5a20bd4c0db77321c2a3ed;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;SUCCESS;8;2026-07-17 09:31:58;8;0;0;0;broadcasts
+6a5a21044c0db77321c2a3f8;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;SUCCESS;10;2026-07-17 09:33:09;10;0;0;0;broadcasts
+6a5a219f4c0db77321c2a407;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;SUCCESS;10;2026-07-17 09:35:43;10;0;0;0;broadcasts
+6a5a22129100911b837d6c83;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;20;2026-07-17 09:37:39;18;2;0;0;broadcasts
+6a5a257b4c0db77321c2a41e;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;16;2026-07-17 09:52:12;15;1;0;0;broadcasts
+6a5a257d4c0db77321c2a429;90179;2.2.08 NARAYANE ALMEIDA 13/04/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;PARTIAL;10;2026-07-17 09:52:14;8;2;0;0;broadcasts
+6a5a265c9100911b837d6cad;91462;2.4.08 FRANCISCO OLIVEIRA 10/11/25;;2 - FARMA DF;PROMO GEOLAB - DF;PARTIAL;44;2026-07-17 09:55:56;10;34;0;0;broadcasts
+6a5a26959100911b837d6cc2;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;20;2026-07-17 09:56:53;17;3;0;0;broadcasts
+6a5a26f09100911b837d6cd7;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;20;2026-07-17 09:58:24;16;4;0;0;broadcasts
+6a5a27459100911b837d6ced;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;PARTIAL;21;2026-07-17 09:59:49;18;3;0;0;broadcasts
+6a5a28a04c0db77321c2a43b;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 16 E 17/07;SUCCESS;12;2026-07-17 10:05:37;12;0;0;0;broadcasts
+6a5a28fe4c0db77321c2a499;91570;2.2.11 GILDEON CARNEIRO 21/11/22;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;PARTIAL;95;2026-07-17 10:07:10;65;30;0;0;broadcasts
+6a5a2a899100911b837d6cf3;90725;2.4.04 ANDERSENE CIRINO 17/04/23;;2 - FARMA DF;MEGA OFERTA DF;SUCCESS;4;2026-07-17 10:13:46;4;0;0;0;broadcasts
+6a5a2c379100911b837d6d30;93931;2.2.06 MORGANA RODRIGUES 21/05/18;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;PARTIAL;58;2026-07-17 10:20:55;51;7;0;0;broadcasts
+6a5a2c7a9100911b837d6d3c;91369;2.1.05 ADEILDO SILVA 18/06/18;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;SUCCESS;11;2026-07-17 10:22:02;11;0;0;0;broadcasts
+6a5a2de39100911b837d6d4a;93895;2.2.14 DAVID ALVES 08/06/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;FAILED;9;2026-07-17 10:28:03;0;9;0;0;broadcasts
+6a5a2e274c0db77321c2a4ab;90773;2.4.10 GABRIEL LOPES 19/01/26;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;PARTIAL;18;2026-07-17 10:29:12;12;6;0;0;broadcasts
+6a5a2f5f4c0db77321c2a4e6;94028;2.2.09 ROBERTO MORAIS 10/11/25;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 16 E 17/07;PARTIAL;59;2026-07-17 10:34:24;48;11;0;0;broadcasts`;
+
+// ================= RELATÓRIO DE DISPAROS (agregado por disparo) — 22 a 28/Jul/2026 =================
+// colunas: ID;Codigo;Vendedor;Base;Filial;Lista;Status;Qtd;Data;Sucesso;Falha;Expirado;Outros;Colecao
+const REL_CSV_W4=`ID;Codigo;Vendedor;Base;Filial;Lista;Status;Qtd;Data;Sucesso;Falha;Expirado;Outros;Colecao
+6a61236c51e9c05d59a2c0e7;93565;1.1.05 WELLINGTON SILVA 02/02/17;;3 - FARMA SP;PROMO GERMED;PARTIAL;15;2026-07-22 17:09:16;14;1;0;0;broadcasts
+6a6124193e274936c8202f5d;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;PROMO TEUTO PR;PARTIAL;87;2026-07-22 17:12:10;84;3;0;0;broadcasts
+6a6128543e274936c8202f71;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;14;2026-07-22 17:30:13;14;0;0;0;broadcasts
+6a6128903e274936c8202fc0;94362;1.1.02 PAULO SANTOS 08/05/23;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;81;2026-07-22 17:31:13;77;4;0;0;broadcasts
+6a6128ab3e274936c8202fd0;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;15;2026-07-22 17:31:40;15;0;0;0;broadcasts
+6a6128f63e274936c8202fe1;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;15;2026-07-22 17:32:54;15;0;0;0;broadcasts
+6a61291c3e274936c8202ff1;90297;1.3.05 JOSE SIMAO 06/03/19;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;15;2026-07-22 17:33:33;15;0;0;0;broadcasts
+6a6129343e274936c8203001;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;15;2026-07-22 17:33:56;14;1;0;0;broadcasts
+6a6129f23e274936c8203014;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;15;2026-07-22 17:37:07;14;1;0;0;broadcasts
+6a612a3151e9c05d59a2c0fe;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;14;2026-07-22 17:38:09;13;1;0;0;broadcasts
+6a612b0b3e274936c820305b;90721;1.4.16 ANDRE BRAGA 06/11/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;71;2026-07-22 17:41:47;57;14;0;0;broadcasts
+6a612cb751e9c05d59a2c114;90960;1.2.03 RITA SOUSA 08/08/22;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;16;2026-07-22 17:48:55;16;0;0;0;broadcasts
+6a613f6751e9c05d59a2c137;90517;1.3.08 KARLOS EDUARDO 01/02/16;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;11;2026-07-22 19:08:39;6;5;0;0;broadcasts
+6a613fed51e9c05d59a2c14d;90517;1.3.08 KARLOS EDUARDO 01/02/16;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;25;2026-07-22 19:10:54;10;15;0;0;broadcasts
+6a61415151e9c05d59a2c15f;94293;1.6.03 AREDIO PARREIRA 19/02/24;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;17;2026-07-22 19:16:50;17;0;0;0;broadcasts
+6a61f5e53e274936c8203175;94471;1.4.02 ANDREIA COELHO 22/04/26;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;1;2026-07-23 08:07:17;1;0;0;0;broadcasts
+6a6200813e274936c820318c;90338;1.4.10 TATIANE LINO 03/07/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;7;2026-07-23 08:52:34;7;0;0;0;broadcasts
+6a6200c33e274936c8203196;90338;1.4.10 TATIANE LINO 03/07/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;10;2026-07-23 08:53:39;9;1;0;0;broadcasts
+6a62010b0d04a56e185923c7;90338;1.4.10 TATIANE LINO 03/07/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;9;2026-07-23 08:54:52;7;2;0;0;broadcasts
+6a62014e0d04a56e185923d2;90338;1.4.10 TATIANE LINO 03/07/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;10;2026-07-23 08:55:58;10;0;0;0;broadcasts
+6a6201e03e274936c82031a1;90338;1.4.10 TATIANE LINO 03/07/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;10;2026-07-23 08:58:25;8;2;0;0;broadcasts
+6a6202cb3e274936c820340c;90338;1.4.10 TATIANE LINO 03/07/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;10;2026-07-23 09:02:20;9;1;0;0;broadcasts
+6a6203933e274936c8203418;90338;1.4.10 TATIANE LINO 03/07/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;10;2026-07-23 09:05:40;9;1;0;0;broadcasts
+6a6204a90d04a56e18592621;90338;1.4.10 TATIANE LINO 03/07/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;12;2026-07-23 09:10:18;10;2;0;0;broadcasts
+6a6205a10d04a56e1859262d;90338;1.4.10 TATIANE LINO 03/07/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;10;2026-07-23 09:14:25;8;2;0;0;broadcasts
+6a6207fc3e274936c8203421;94471;1.4.02 ANDREIA COELHO 22/04/26;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;1;2026-07-23 09:24:29;1;0;0;0;broadcasts
+6a620a703e274936c8203722;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;GIRO DE OFERTAS - PR;PARTIAL;87;2026-07-23 09:34:56;84;3;0;0;broadcasts
+6a622c573e274936c82040d5;91803;3.1.05 CARLOS OLIVIERI 04/03/24;;5 - FARMA RJ;GIRO DE OFERTAS - RJ;PARTIAL;75;2026-07-23 11:59:35;50;25;0;0;broadcasts
+6a622cf63e274936c8204152;94295;1.5.03 ANGELO OLIVEIRA 09/12/24;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;126;2026-07-23 12:02:14;78;48;0;0;broadcasts
+6a622e63a066be2a366ac71d;91718;3.4.02 SANDRO NEVES 15/07/24;;5 - FARMA RJ;GIRO DE OFERTAS - RJ;PARTIAL;74;2026-07-23 12:08:19;69;5;0;0;broadcasts
+6a6230403e274936c82041b2;94363;1.1.14 JOSE GONÇALVES 23/06/25;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;112;2026-07-23 12:16:17;53;59;0;0;broadcasts
+6a6230b2a066be2a366ac725;90190;2.4.02 ANA FLAVIA BARBOSA 19/08/24;;1 - FARMA GO;GIRO DE OFERTAS - GO;PARTIAL;7;2026-07-23 12:18:10;6;1;0;0;broadcasts
+6a6231093e274936c82041ed;93931;2.2.06 MORGANA RODRIGUES 21/05/18;;1 - FARMA GO;GIRO DE OFERTAS - GO;PENDING;60;2026-07-23 12:19:38;51;6;0;0;broadcasts
+6a6232dea066be2a366ac72f;93895;2.2.14 DAVID ALVES 08/06/26;;1 - FARMA GO;GIRO DE OFERTAS - GO;PARTIAL;9;2026-07-23 12:27:27;2;7;0;0;broadcasts
+6a6235953e274936c8204245;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;PROMO LEGRAND PR;PARTIAL;87;2026-07-23 12:39:01;84;3;0;0;broadcasts
+6a623691a066be2a366ac75c;93642;1.1.10 THIAGO MULATO 05/04/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;43;2026-07-23 12:43:13;41;2;0;0;broadcasts
+6a623940a066be2a366ac79b;94028;2.2.09 ROBERTO MORAIS 10/11/25;;1 - FARMA GO;GIRO DE OFERTAS - GO;PARTIAL;61;2026-07-23 12:54:40;49;12;0;0;broadcasts
+6a623a323e274936c8204259;91369;2.1.05 ADEILDO SILVA 18/06/18;;1 - FARMA GO;GIRO DE OFERTAS - GO;SUCCESS;13;2026-07-23 12:58:43;13;0;0;0;broadcasts
+6a6255c2a066be2a366acd24;90310;1.6.12 DIVALDO SILVA - 02/24;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;PARTIAL;17;2026-07-23 14:56:18;16;1;0;0;broadcasts
+6a62716d665fa64185c58c92;90319;1.3.03 RENATO LOPES 15/08/16;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;1;2026-07-23 16:54:21;1;0;0;0;broadcasts
+6a62764d15d29a6fb5d8e6c6;94293;1.6.03 AREDIO PARREIRA 19/02/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-23 17:15:10;1;0;0;0;broadcasts
+6a62766215d29a6fb5d8e6d6;93565;1.1.05 WELLINGTON SILVA 02/02/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;15;2026-07-23 17:15:30;14;1;0;0;broadcasts
+6a6276d915d29a6fb5d8e6dd;90352;1.6.06 ADEMAR FERREIRA 02/05/23;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;5;2026-07-23 17:17:30;5;0;0;0;broadcasts
+6a62775815d29a6fb5d8e6e7;90352;1.6.06 ADEMAR FERREIRA 02/05/23;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;8;2026-07-23 17:19:37;8;0;0;0;broadcasts
+6a62776215d29a6fb5d8e729;90231;1.1.07 LUCIANA SILVA 03/11/25;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;PARTIAL;67;2026-07-23 17:19:47;56;11;0;0;broadcasts
+6a6277db3e274936c8204830;90352;1.6.06 ADEMAR FERREIRA 02/05/23;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;PARTIAL;4;2026-07-23 17:21:47;3;1;0;0;broadcasts
+6a6277ff15d29a6fb5d8e72c;90352;1.6.06 ADEMAR FERREIRA 02/05/23;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;1;2026-07-23 17:22:23;1;0;0;0;broadcasts
+6a62785115d29a6fb5d8e737;90264;1.5.12 CARLOS CESAR 09/09/24;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;10;2026-07-23 17:23:45;10;0;0;0;broadcasts
+6a627ac715d29a6fb5d8e73e;94293;1.6.03 AREDIO PARREIRA 19/02/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-23 17:34:16;1;0;0;0;broadcasts
+6a627b7515d29a6fb5d8e75e;94286;1.1.04 MARILENE SILVA 21/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;PARTIAL;36;2026-07-23 17:37:10;30;6;0;0;broadcasts
+6a627bcd3e274936c820483d;94351;1.6.01 RAFAEL VENCESLAU 13/02/23;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;6;2026-07-23 17:38:37;6;0;0;0;broadcasts
+6a6280d915d29a6fb5d8e8fe;94351;1.6.01 RAFAEL VENCESLAU 13/02/23;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;2;2026-07-23 18:00:09;2;0;0;0;broadcasts
+6a63471715d29a6fb5d8ec14;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;10;2026-07-24 08:05:59;10;0;0;0;broadcasts
+6a6347783e274936c820525d;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;10;2026-07-24 08:07:36;10;0;0;0;broadcasts
+6a6347fa3e274936c8205268;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;10;2026-07-24 08:09:47;10;0;0;0;broadcasts
+6a63488815d29a6fb5d8ec1f;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;PARTIAL;10;2026-07-24 08:12:08;9;1;0;0;broadcasts
+6a6348f315d29a6fb5d8ec21;90346;1.5.10 DORIVAL SCALIANTE 07/03/22;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;1;2026-07-24 08:13:56;1;0;0;0;broadcasts
+6a6349bf3e274936c8205273;90131;1.4.01 LUIZ RODRIGUES 06/05/24;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;10;2026-07-24 08:17:20;10;0;0;0;broadcasts
+6a634de815d29a6fb5d8ec2c;90264;1.5.12 CARLOS CESAR 09/09/24;;3 - FARMA SP;GIRO DE OFERTAS - SP;SUCCESS;10;2026-07-24 08:35:05;10;0;0;0;broadcasts
+6a63548b15d29a6fb5d8ec3b;90264;1.5.12 CARLOS CESAR 09/09/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;11;2026-07-24 09:03:23;11;0;0;0;broadcasts
+6a6357d33e274936c820527a;94351;1.6.01 RAFAEL VENCESLAU 13/02/23;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-24 09:17:24;1;0;0;0;broadcasts
+6a635b913e274936c82052b3;91462;2.4.08 FRANCISCO OLIVEIRA 10/11/25;;2 - FARMA DF;OFERTAS TURBINADAS FINAL DE SEMANA - DF;PARTIAL;44;2026-07-24 09:33:21;10;34;0;0;broadcasts
+6a635c3b15d29a6fb5d8ec8f;91714;3.4.08 MARCOS DE 12/08/19;;5 - FARMA RJ;OFERTAS TURBINADAS FINAL DE SEMANA - RJ;PARTIAL;75;2026-07-24 09:36:11;72;3;0;0;broadcasts
+6a635ca015d29a6fb5d8ec91;94334;4.5.01 ROBERTO GRIGOLO 12/01/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - PR;SUCCESS;1;2026-07-24 09:37:53;1;0;0;0;broadcasts
+6a635d0115d29a6fb5d8ec93;94334;4.5.01 ROBERTO GRIGOLO 12/01/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - PR;SUCCESS;1;2026-07-24 09:39:30;1;0;0;0;broadcasts
+6a635e263e274936c82052b9;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;TÁ BOMBANDO HPC: ABOVE - SC;SUCCESS;1;2026-07-24 09:44:22;1;0;0;0;broadcasts
+6a6360e13e274936c82052bd;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;PROMO TEUTO SC;SUCCESS;1;2026-07-24 09:56:01;1;0;0;0;broadcasts
+6a6361ae3e274936c8205304;91927;2.3.04 JOSE OLIVEIRA 14/02/24;;1 - FARMA GO;VENDA MAIS NEOQ - GO! 23 E 24/07;PARTIAL;68;2026-07-24 09:59:27;66;2;0;0;broadcasts
+6a6361eb3e274936c820534b;90902;3.1.02 MAURO LOPES 06/03/23;;5 - FARMA RJ;OFERTAS TURBINADAS FINAL DE SEMANA - RJ;PARTIAL;74;2026-07-24 10:00:27;68;6;0;0;broadcasts
+6a63628d3e274936c8205352;94293;1.6.03 AREDIO PARREIRA 19/02/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-24 10:03:09;1;0;0;0;broadcasts
+6a63638b15d29a6fb5d8eca5;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;1;2026-07-24 10:07:23;1;0;0;0;broadcasts
+6a6363fd3e274936c8205356;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;1;2026-07-24 10:09:17;1;0;0;0;broadcasts
+6a6364da3e274936c820535b;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;VENDA MAIS NEOQ - SC! 23 E 24/07;SUCCESS;1;2026-07-24 10:12:59;1;0;0;0;broadcasts
+6a63654515d29a6fb5d8eca8;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;PROMO TEUTO SC;SUCCESS;1;2026-07-24 10:14:46;1;0;0;0;broadcasts
+6a6366ad15d29a6fb5d8ecad;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;1;2026-07-24 10:20:46;1;0;0;0;broadcasts
+6a63671715d29a6fb5d8ecd8;91719;4.4.05 AGENOR MELO 08/06/20;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - PR;SUCCESS;41;2026-07-24 10:22:31;41;0;0;0;broadcasts
+6a6367de3e274936c820535f;94293;1.6.03 AREDIO PARREIRA 19/02/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-24 10:25:50;1;0;0;0;broadcasts
+6a6368e115d29a6fb5d8ecdd;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;1;2026-07-24 10:30:10;1;0;0;0;broadcasts
+6a6369643e274936c820536a;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;1;2026-07-24 10:32:21;1;0;0;0;broadcasts
+6a636af23e274936c820536d;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;VENDA MAIS NEOQ - SC! 23 E 24/07;SUCCESS;1;2026-07-24 10:38:59;1;0;0;0;broadcasts
+6a636b9b3e274936c8205370;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;VENDA MAIS NEOQ - SC! 23 E 24/07;SUCCESS;1;2026-07-24 10:41:47;1;0;0;0;broadcasts
+6a636c1b3e274936c8205372;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;VENDA MAIS NEOQ - SC! 23 E 24/07;SUCCESS;1;2026-07-24 10:43:55;1;0;0;0;broadcasts
+6a636e1e15d29a6fb5d8ece6;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;1;2026-07-24 10:52:30;1;0;0;0;broadcasts
+6a636e763e274936c8205374;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;1;2026-07-24 10:53:58;1;0;0;0;broadcasts
+6a636fcf15d29a6fb5d8ece8;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;VENDA MAIS NEOQ - SC! 23 E 24/07;SUCCESS;1;2026-07-24 10:59:43;1;0;0;0;broadcasts
+6a63745a3e274936c82053cf;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - PR;PARTIAL;87;2026-07-24 11:19:07;84;3;0;0;broadcasts
+6a63890115d29a6fb5d8ed01;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-24 12:47:13;1;0;0;0;broadcasts
+6a63921d3e274936c82059b5;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;2;2026-07-24 13:26:06;2;0;0;0;broadcasts
+6a6395c43e274936c82059bc;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;3;2026-07-24 13:41:41;3;0;0;0;broadcasts
+6a6398c615d29a6fb5d8ed62;90921;3.2.10 ALEXANDRE SILVA 01/09/17;;5 - FARMA RJ;OFERTAS TURBINADAS FINAL DE SEMANA - RJ;PARTIAL;83;2026-07-24 13:54:30;78;5;0;0;broadcasts
+6a639af93e274936c82059c4;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;PROMO TEUTO SC;SUCCESS;1;2026-07-24 14:03:54;1;0;0;0;broadcasts
+6a639cd115d29a6fb5d8ed9f;90352;1.6.06 ADEMAR FERREIRA 02/05/23;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;PARTIAL;60;2026-07-24 14:11:45;58;2;0;0;broadcasts
+6a639e4715d29a6fb5d8eda2;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-24 14:17:59;1;0;0;0;broadcasts
+6a63a2a03e274936c8205a24;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;GIRO DE OFERTAS - PR;PARTIAL;87;2026-07-24 14:36:33;84;3;0;0;broadcasts
+6a63aa6315d29a6fb5d8edbd;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;PARTIAL;15;2026-07-24 15:09:40;14;1;0;0;broadcasts
+6a63aa963e274936c8205a3a;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;15;2026-07-24 15:10:30;15;0;0;0;broadcasts
+6a63ab043e274936c8205a4a;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;PARTIAL;15;2026-07-24 15:12:20;12;3;0;0;broadcasts
+6a63ab513e274936c8205a5a;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;15;2026-07-24 15:13:37;15;0;0;0;broadcasts
+6a63aba13e274936c8205a6a;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;15;2026-07-24 15:14:57;15;0;0;0;broadcasts
+6a63b0ee15d29a6fb5d8edcf;90264;1.5.12 CARLOS CESAR 09/09/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;15;2026-07-24 15:37:34;15;0;0;0;broadcasts
+6a63c3e43e274936c8205a92;90264;1.5.12 CARLOS CESAR 09/09/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;30;2026-07-24 16:58:28;30;0;0;0;broadcasts
+6a63c41a15d29a6fb5d8edd6;90264;1.5.12 CARLOS CESAR 09/09/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-24 16:59:22;1;0;0;0;broadcasts
+6a63c72f3e274936c8205aa3;90135;1.5.02 DANIEL INACIO 22/04/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;8;2026-07-24 17:12:31;8;0;0;0;broadcasts
+6a63c77e3e274936c8205aae;90135;1.5.02 DANIEL INACIO 22/04/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;10;2026-07-24 17:13:50;10;0;0;0;broadcasts
+6a63c80a3e274936c8205abd;90135;1.5.02 DANIEL INACIO 22/04/26;;3 - FARMA SP;VENDA MAIS NEOQ - SP! 23 E 24/07;SUCCESS;13;2026-07-24 17:16:11;13;0;0;0;broadcasts
+6a63d06b3e274936c8205ac6;94293;1.6.03 AREDIO PARREIRA 19/02/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;3;2026-07-24 17:51:56;3;0;0;0;broadcasts
+6a64b942bd98f90765941e44;94293;1.6.03 AREDIO PARREIRA 19/02/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;118;2026-07-25 10:25:22;116;2;0;0;broadcasts
+6a674045cb6ab74327d69fe2;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB GO;SUCCESS;9;2026-07-27 08:25:57;9;0;0;0;broadcasts
+6a6740803e274936c82068a8;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB GO;PARTIAL;9;2026-07-27 08:26:57;8;1;0;0;broadcasts
+6a6740a83e274936c82068b2;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB GO;SUCCESS;8;2026-07-27 08:27:37;8;0;0;0;broadcasts
+6a6740d43e274936c82068bc;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB GO;SUCCESS;9;2026-07-27 08:28:21;9;0;0;0;broadcasts
+6a674118cb6ab74327d6a03a;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;GIRO DE OFERTAS - PR;PARTIAL;87;2026-07-27 08:29:29;85;2;0;0;broadcasts
+6a6743a73e274936c82068c8;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;PROMO GEOLAB GO;SUCCESS;8;2026-07-27 08:40:24;8;0;0;0;broadcasts
+6a674dabcb6ab74327d6a04a;93895;2.2.14 DAVID ALVES 08/06/26;;1 - FARMA GO;GIRO DE OFERTAS - GO;PARTIAL;9;2026-07-27 09:23:07;1;8;0;0;broadcasts
+6a674dcf3e274936c820694a;93899;1.5.04 ALEXANDRE LOUBACK 13/01/25;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;129;2026-07-27 09:23:43;117;12;0;0;broadcasts
+6a674f683e274936c82069a7;91698;1.5.08 MARCELO GOMES 02/09/19;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;90;2026-07-27 09:30:32;62;28;0;0;broadcasts
+6a6750aa3e274936c82069c1;90960;1.2.03 RITA SOUSA 08/08/22;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;24;2026-07-27 09:35:55;23;1;0;0;broadcasts
+6a6750dae6ad636213b4fc4a;94286;1.1.04 MARILENE SILVA 21/03/22;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;71;2026-07-27 09:36:42;61;10;0;0;broadcasts
+6a6754c23e274936c8206a08;93931;2.2.06 MORGANA RODRIGUES 21/05/18;;1 - FARMA GO;OFERTAS TURBINADAS FINAL DE SEMANA - GO;PARTIAL;60;2026-07-27 09:53:22;52;8;0;0;broadcasts
+6a675871e6ad636213b4fc55;94351;1.6.01 RAFAEL VENCESLAU 13/02/23;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;3;2026-07-27 10:09:05;3;0;0;0;broadcasts
+6a6759bbe6ad636213b4fc64;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;1;2026-07-27 10:14:36;1;0;0;0;broadcasts
+6a6759be3e274936c8206a4a;91474;2.2.02 MARCOS SILVA 19/07/21;;1 - FARMA GO;OFERTAS TURBINADAS FINAL DE SEMANA - GO;PARTIAL;68;2026-07-27 10:14:39;57;11;0;0;broadcasts
+6a675d01e6ad636213b4fc6c;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;FAILED;1;2026-07-27 10:28:33;0;1;0;0;broadcasts
+6a675d9a3e274936c8206a4e;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;1;2026-07-27 10:31:06;1;0;0;0;broadcasts
+6a6761ee3e274936c8206a54;94355;1.1.12 MATHEUS AZEVEDO 04/07/22;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;2;2026-07-27 10:49:35;2;0;0;0;broadcasts
+6a676376e6ad636213b4fceb;90862;1.5.09 RAFAEL VICENTE 05/07/21;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;108;2026-07-27 10:56:06;105;3;0;0;broadcasts
+6a6764ce3e274936c8206ac1;93594;1.5.07 LUCIENE CRUZ 19/05/25;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;96;2026-07-27 11:01:50;86;10;0;0;broadcasts
+6a676965e6ad636213b4fd03;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;13;2026-07-27 11:21:26;13;0;0;0;broadcasts
+6a676993e6ad636213b4fd13;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;15;2026-07-27 11:22:12;15;0;0;0;broadcasts
+6a6769d13e274936c8206ac7;90931;3.3.07 LEONNAN BEAUCLAIR 10/02/25;;5 - FARMA RJ;OFERTAS TURBINADAS FINAL DE SEMANA - RJ;SUCCESS;1;2026-07-27 11:23:14;1;0;0;0;broadcasts
+6a6769d53e274936c8206ad7;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;15;2026-07-27 11:23:17;14;1;0;0;broadcasts
+6a676a1ae6ad636213b4fd25;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;16;2026-07-27 11:24:27;15;1;0;0;broadcasts
+6a676a62e6ad636213b4fd39;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;14;2026-07-27 11:25:38;13;1;0;0;broadcasts
+6a676aa73e274936c8206ae7;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;14;2026-07-27 11:26:47;13;1;0;0;broadcasts
+6a676d9fe6ad636213b4fd60;93642;1.1.10 THIAGO MULATO 05/04/17;;3 - FARMA SP;GIRO DE OFERTAS - SP;PARTIAL;37;2026-07-27 11:39:27;36;1;0;0;broadcasts
+6a6773c0e6ad636213b4fd67;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-27 12:05:37;1;0;0;0;broadcasts
+6a677a613e274936c8206b03;90341;1.5.16 GABRIEL BORGES 02/03/26;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-27 12:33:54;1;0;0;0;broadcasts
+6a6780c53e274936c8206b15;91354;2.1.10 RAQUEL RODRIGUES 09/10/23;;1 - FARMA GO;OFERTAS TURBINADAS FINAL DE SEMANA - GO;SUCCESS;15;2026-07-27 13:01:09;15;0;0;0;broadcasts
+6a6781a43e274936c8206b28;91354;2.1.10 RAQUEL RODRIGUES 09/10/23;;1 - FARMA GO;OFERTAS TURBINADAS FINAL DE SEMANA - GO;PARTIAL;16;2026-07-27 13:04:53;15;1;0;0;broadcasts
+6a67823ee6ad636213b4fd8d;91354;2.1.10 RAQUEL RODRIGUES 09/10/23;;1 - FARMA GO;OFERTAS TURBINADAS FINAL DE SEMANA - GO;SUCCESS;18;2026-07-27 13:07:26;18;0;0;0;broadcasts
+6a679565d7f2f63c12ed4e71;93932;2.1.07 ERICK VERNILLO 09/03/26;;1 - FARMA GO;OFERTAS TURBINADAS FINAL DE SEMANA - GO;PARTIAL;15;2026-07-27 14:29:09;14;1;0;0;broadcasts
+6a67969b3e274936c8206bba;90179;2.2.08 NARAYANE ALMEIDA 13/04/26;;1 - FARMA GO;OFERTAS TURBINADAS FINAL DE SEMANA - GO;SUCCESS;8;2026-07-27 14:34:19;8;0;0;0;broadcasts
+6a679de1d7f2f63c12ed4e9a;93932;2.1.07 ERICK VERNILLO 09/03/26;;1 - FARMA GO;GIRO DE OFERTAS - GO;PARTIAL;15;2026-07-27 15:05:21;10;5;0;0;broadcasts
+6a67a20c3e274936c8206bef;91719;4.4.05 AGENOR MELO 08/06/20;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;41;2026-07-27 15:23:08;41;0;0;0;broadcasts
+6a67a30ed7f2f63c12ed4ea0;91719;4.4.05 AGENOR MELO 08/06/20;;6 - FARMA PR;OFERTAS TURBINADAS FINAL DE SEMANA - SC;SUCCESS;1;2026-07-27 15:27:26;1;0;0;0;broadcasts
+6a67ab883e274936c8206c43;90320;1.1.08 ANDERSON SILVA 08/05/23;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;PARTIAL;77;2026-07-27 16:03:36;28;49;0;0;broadcasts
+6a67af5cd7f2f63c12ed4ea9;94355;1.1.12 MATHEUS AZEVEDO 04/07/22;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-27 16:19:57;1;0;0;0;broadcasts
+6a67bfef3be000227a26e4bf;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;PROMO GEOLAB PR;PARTIAL;87;2026-07-27 17:30:39;78;9;0;0;broadcasts
+6a67c70c3be000227a26e4da;90264;1.5.12 CARLOS CESAR 09/09/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;18;2026-07-27 18:01:00;18;0;0;0;broadcasts
+6a67cff73be000227a26e4ec;94293;1.6.03 AREDIO PARREIRA 19/02/24;;3 - FARMA SP;OFERTAS TURBINADAS FINAL DE SEMANA - SP;SUCCESS;1;2026-07-27 18:39:03;1;0;0;0;broadcasts
+6a68b94e3e274936c820766d;94121;1.1.15 DAVI INACIO 19/02/25;;3 - FARMA SP;TÁ BOMBANDO HPC ARTE NATIVA;PARTIAL;90;2026-07-28 11:14:38;76;14;0;0;broadcasts
+6a68bcb5d821273ade659b73;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;EXCLUSIVA GEOLAB - GO;SUCCESS;10;2026-07-28 11:29:09;10;0;0;0;broadcasts
+6a68bd25d821273ade659b7e;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;EXCLUSIVA GEOLAB - GO;SUCCESS;10;2026-07-28 11:31:01;10;0;0;0;broadcasts
+6a68bd5bd821273ade659b89;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;EXCLUSIVA GEOLAB - GO;PARTIAL;10;2026-07-28 11:31:55;9;1;0;0;broadcasts
+6a68bd8dd821273ade659b94;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;EXCLUSIVA GEOLAB - GO;SUCCESS;10;2026-07-28 11:32:46;10;0;0;0;broadcasts
+6a68bdc1d821273ade659b98;90199;2.2.03 DIOGO ROCHA 08/06/26;;1 - FARMA GO;EXCLUSIVA GEOLAB - GO;SUCCESS;3;2026-07-28 11:33:38;3;0;0;0;broadcasts
+6a68c17a3e274936c8207783;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;15;2026-07-28 11:49:31;15;0;0;0;broadcasts
+6a68c1acd821273ade659ea0;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;15;2026-07-28 11:50:20;15;0;0;0;broadcasts
+6a68c21ed821273ade659eb1;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;16;2026-07-28 11:52:14;16;0;0;0;broadcasts
+6a68c25bd821273ade659eec;93931;2.2.06 MORGANA RODRIGUES 21/05/18;;1 - FARMA GO;OFERTAS EM DESTAQUE - GO;PARTIAL;60;2026-07-28 11:53:16;52;8;0;0;broadcasts
+6a68c2663e274936c8207797;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;15;2026-07-28 11:53:26;15;0;0;0;broadcasts
+6a68c29ed821273ade659efd;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;PARTIAL;15;2026-07-28 11:54:22;14;1;0;0;broadcasts
+6a68c34f3e274936c82077aa;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;PARTIAL;15;2026-07-28 11:57:20;13;2;0;0;broadcasts
+6a68c3a43e274936c82077b9;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;PARTIAL;14;2026-07-28 11:58:45;13;1;0;0;broadcasts
+6a68c4213e274936c82077be;90213;1.1.13 FABIO MORAIS 08/06/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;3;2026-07-28 12:00:49;3;0;0;0;broadcasts
+6a68cb66d821273ade659f32;93642;1.1.10 THIAGO MULATO 05/04/17;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;PARTIAL;40;2026-07-28 12:31:50;38;2;0;0;broadcasts
+6a68d256d821273ade659f45;93565;1.1.05 WELLINGTON SILVA 02/02/17;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;PARTIAL;15;2026-07-28 13:01:26;14;1;0;0;broadcasts
+6a68d2a73e274936c82077d8;90179;2.2.08 NARAYANE ALMEIDA 13/04/26;;1 - FARMA GO;OFERTAS EM DESTAQUE - GO;SUCCESS;9;2026-07-28 13:02:48;9;0;0;0;broadcasts
+6a68d3073e274936c82077ff;91462;2.4.08 FRANCISCO OLIVEIRA 10/11/25;;2 - FARMA DF;OFERTAS EM DESTAQUE - DF;PARTIAL;45;2026-07-28 13:04:23;10;35;0;0;broadcasts
+6a68e438d821273ade659f68;93565;1.1.05 WELLINGTON SILVA 02/02/17;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;PARTIAL;17;2026-07-28 14:17:45;15;2;0;0;broadcasts
+6a68e951d821273ade659f78;93893;2.4.05 BRUNO MONTEIRO 22/09/25;;2 - FARMA DF;OFERTAS EM DESTAQUE - DF;SUCCESS;9;2026-07-28 14:39:29;9;0;0;0;broadcasts
+6a68ea85d821273ade659fd2;91392;4.3.08 ELIELTON FRAGA 06/12/21;;6 - FARMA PR;OFERTAS EM DESTAQUE - PR;PARTIAL;88;2026-07-28 14:44:38;86;2;0;0;broadcasts
+6a68eb0ed821273ade659fdb;90773;2.4.10 GABRIEL LOPES 19/01/26;;1 - FARMA GO;OFERTAS EM DESTAQUE - GO;SUCCESS;8;2026-07-28 14:46:55;8;0;0;0;broadcasts
+6a68eb8e3e274936c8207827;91369;2.1.05 ADEILDO SILVA 18/06/18;;1 - FARMA GO;EXCLUSIVA GEOLAB - GO;SUCCESS;10;2026-07-28 14:49:03;10;0;0;0;broadcasts
+6a68eb983e274936c820782a;90209;1.1.06 JOSE PIMENTA 15/06/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;1;2026-07-28 14:49:13;1;0;0;0;broadcasts
+6a68ebead821273ade65a01d;91474;2.2.02 MARCOS SILVA 19/07/21;;1 - FARMA GO;OFERTAS EM DESTAQUE - GO;PARTIAL;67;2026-07-28 14:50:35;57;10;0;0;broadcasts
+6a68ec45d821273ade65a020;90209;1.1.06 JOSE PIMENTA 15/06/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;1;2026-07-28 14:52:06;1;0;0;0;broadcasts
+6a68f1153e274936c820786c;94028;2.2.09 ROBERTO MORAIS 10/11/25;;1 - FARMA GO;OFERTAS EM DESTAQUE - GO;PARTIAL;61;2026-07-28 15:12:37;49;12;0;0;broadcasts
+6a68f1d63e274936c820786f;90960;1.2.03 RITA SOUSA 08/08/22;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;1;2026-07-28 15:15:50;1;0;0;0;broadcasts
+6a68f2913e274936c8207889;90960;1.2.03 RITA SOUSA 08/08/22;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;25;2026-07-28 15:18:58;25;0;0;0;broadcasts
+6a6900153e274936c8207b52;90352;1.6.06 ADEMAR FERREIRA 02/05/23;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;1;2026-07-28 16:16:38;1;0;0;0;broadcasts
+6a6903e7d821273ade65a0e7;93565;1.1.05 WELLINGTON SILVA 02/02/17;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;15;2026-07-28 16:32:55;15;0;0;0;broadcasts
+6a6908fad821273ade65a0ff;90135;1.5.02 DANIEL INACIO 22/04/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;PARTIAL;10;2026-07-28 16:54:35;9;1;0;0;broadcasts
+6a6909b0d821273ade65a10e;90135;1.5.02 DANIEL INACIO 22/04/26;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;14;2026-07-28 16:57:36;14;0;0;0;broadcasts
+6a69175d3e274936c8207ba8;90264;1.5.12 CARLOS CESAR 09/09/24;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;SUCCESS;10;2026-07-28 17:55:58;10;0;0;0;broadcasts
+6a691cabd821273ade65a134;93565;1.1.05 WELLINGTON SILVA 02/02/17;;3 - FARMA SP;OFERTAS EM DESTAQUE - SP;PARTIAL;15;2026-07-28 18:18:35;8;7;0;0;broadcasts
+6a692a053e274936c8207bbb;91635;4.5.04 RICARDO PAULA 20/07/26;;6 - FARMA PR;OFERTAS EM DESTAQUE - SC;SUCCESS;1;2026-07-28 19:15:33;1;0;0;0;broadcasts`;
+
+// ================= BASE DE VENDEDORES (aba base vendedores) =================
+const BASE_CSV=`ID;Nome;Supervisor
+93686;1.0.00 LUCILENE - REG. I SPI/SPC;5.0.00 GRANDES CONTAS
+93561;1.1.00 MAXWEL - SUP SPC I 02/03/26;1.1.00 MAXWEL - SUP SPC I 02/03/26
+90120;1.1.01 VAGO 02/26;1.1.00 MAXWEL - SUP SPC I 02/03/26
+94362;1.1.02 PAULO SANTOS 08/05/23;1.1.00 MAXWEL - SUP SPC I 02/03/26
+90241;1.1.03 WAGNER MANSILHA 13/04/26;1.1.00 MAXWEL - SUP SPC I 02/03/26
+94286;1.1.04 MARILENE SILVA 21/03/22;1.1.00 MAXWEL - SUP SPC I 02/03/26
+93565;1.1.05 WELLINGTON SILVA 02/02/17;1.1.00 MAXWEL - SUP SPC I 02/03/26
+90209;1.1.06 JOSE PIMENTA 15/06/26;1.1.00 MAXWEL - SUP SPC I 02/03/26
+90231;1.1.07 LUCIANA SILVA 03/11/25;1.1.00 MAXWEL - SUP SPC I 02/03/26
+90320;1.1.08 ANDERSON SILVA 08/05/23;1.1.00 MAXWEL - SUP SPC I 02/03/26
+90284;1.1.09 CELSO NONATO 11/05/26;1.1.00 MAXWEL - SUP SPC I 02/03/26
+93642;1.1.10 THIAGO MULATO 05/04/17;1.1.00 MAXWEL - SUP SPC I 02/03/26
+90123;1.1.11 RICARDO BIZARRIA 02/12/19;1.1.00 MAXWEL - SUP SPC I 02/03/26
+94355;1.1.12 MATHEUS AZEVEDO 04/07/22;1.1.00 MAXWEL - SUP SPC I 02/03/26
+90213;1.1.13 FABIO MORAIS 08/06/26;1.1.00 MAXWEL - SUP SPC I 02/03/26
+94363;1.1.14 JOSE GONÇALVES 23/06/25;1.1.00 MAXWEL - SUP SPC I 02/03/26
+94121;1.1.15 DAVI INACIO 19/02/25;1.1.00 MAXWEL - SUP SPC I 02/03/26
+93634;1.10.00 LUCAS - MC PJ 07/26;1.10.00 LUCAS - MC PJ 07/26
+93620;1.12.00 MARCIO - MC SPI I - 12/25;1.12.00 MARCIO - MC SPI I - 12/25
+93760;1.2.00 BRUNO - SUP SPC V - 02/26;1.2.00 BRUNO - SUP SPC V - 02/26
+90228;1.2.01 RONILDO BITENCOURT 01/10/15;1.2.00 BRUNO - SUP SPC V - 02/26
+91743;1.2.02 EMERSON CIANI 04/11/19;1.2.00 BRUNO - SUP SPC V - 02/26
+90960;1.2.03 RITA SOUSA 08/08/22;1.2.00 BRUNO - SUP SPC V - 02/26
+90261;1.2.04 ODAIR CIANI 05/09/16;1.2.00 BRUNO - SUP SPC V - 02/26
+90516;1.2.05 SELMO BURANELLO 06/07/26;1.2.00 BRUNO - SUP SPC V - 02/26
+90243;1.2.06 SANDRA HARANO 02/08/21;1.2.00 BRUNO - SUP SPC V - 02/26
+90544;1.2.07 KLEBER MOLINA 22/02/21;1.2.00 BRUNO - SUP SPC V - 02/26
+90233;1.2.08 EDER SOUZA 04/05/15;1.2.00 BRUNO - SUP SPC V - 02/26
+90121;1.2.09 VANESSA COSTA 23/10/23;1.2.00 BRUNO - SUP SPC V - 02/26
+94557;1.2.10 MAGIDIEL SILVA 21/06/21;1.2.00 BRUNO - SUP SPC V - 02/26
+90124;1.2.11 FLAVIO MORAIS 20/10/25;1.2.00 BRUNO - SUP SPC V - 02/26
+93613;1.2.12 DIEGO AGUIAR 08/09/25;1.2.00 BRUNO - SUP SPC V - 02/26
+90519;1.2.13 ETNA SANTOS 04/05/16;1.2.00 BRUNO - SUP SPC V - 02/26
+91709;1.2.14 ALMIR MARTINS 11/09/23;1.2.00 BRUNO - SUP SPC V - 02/26
+93807;1.2.15 VAGO 04/26;1.2.00 BRUNO - SUP SPC V - 02/26
+93609;1.3.00 VILMA - SUP SPC III 03/15;1.3.00 VILMA - SUP SPC III 03/15
+90216;1.3.01 NELSON VIANNA 19/06/24;1.3.00 VILMA - SUP SPC III 03/15
+90764;1.3.02 PEDRO LUIS 16/08/21;1.3.00 VILMA - SUP SPC III 03/15
+90319;1.3.03 RENATO LOPES 15/08/16;1.3.00 VILMA - SUP SPC III 03/15
+90117;1.3.04 EZIO PAULA 18/09/23;1.3.00 VILMA - SUP SPC III 03/15
+90297;1.3.05 JOSE SIMAO 06/03/19;1.3.00 VILMA - SUP SPC III 03/15
+94326;1.3.06 LUARA SALLES 11/03/24;1.3.00 VILMA - SUP SPC III 03/15
+90517;1.3.08 KARLOS EDUARDO 01/02/16;1.3.00 VILMA - SUP SPC III 03/15
+93617;1.3.09 VAGO 05/26;1.3.00 VILMA - SUP SPC III 03/15
+90143;1.3.10 VAGO 08/25;1.3.00 VILMA - SUP SPC III 03/15
+93655;1.3.11 LUIZ CRISTO 13/01/25;1.3.00 VILMA - SUP SPC III 03/15
+90349;1.3.12 VAGO 06/26;1.3.00 VILMA - SUP SPC III 03/15
+93595;1.3.14 NILSON CANCIAN 22/06/26;1.3.00 VILMA - SUP SPC III 03/15
+93756;1.4.00 S FREITAS -SUP SPI IV - 12/16;1.4.00 S FREITAS -SUP SPI IV - 12/16
+90131;1.4.01 LUIZ RODRIGUES 06/05/24;1.4.00 S FREITAS -SUP SPI IV - 12/16
+94471;1.4.02 ANDREIA COELHO 22/04/26;1.4.00 S FREITAS -SUP SPI IV - 12/16
+91350;1.4.03 JOAO MARTINS 17/12/18;1.4.00 S FREITAS -SUP SPI IV - 12/16
+90350;1.4.04 JULIANA DE 12/06/17;1.4.00 S FREITAS -SUP SPI IV - 12/16
+90132;1.4.05 VAGO 10/25;1.4.00 S FREITAS -SUP SPI IV - 12/16
+90128;1.4.06 VAGO 09/25;1.4.00 S FREITAS -SUP SPI IV - 12/16
+93658;1.4.07 VAGO 06/26;1.4.00 S FREITAS -SUP SPI IV - 12/16
+93916;1.4.08 LUIZ FREIXEDELO 01/06/15;1.4.00 S FREITAS -SUP SPI IV - 12/16
+90142;1.4.09 FABIANA BUCENE 01/12/14;1.4.00 S FREITAS -SUP SPI IV - 12/16
+90338;1.4.10 TATIANE LINO 03/07/17;1.4.00 S FREITAS -SUP SPI IV - 12/16
+93912;1.4.11 VAGO 04/25;1.4.00 S FREITAS -SUP SPI IV - 12/16
+93598;1.4.12 VAGO 05/26;1.4.00 S FREITAS -SUP SPI IV - 12/16
+91553;1.4.13 ARIANE OLIVEIRA 09/01/23;1.4.00 S FREITAS -SUP SPI IV - 12/16
+90141;1.4.14 JOSE CARRENHO 01/12/14;1.4.00 S FREITAS -SUP SPI IV - 12/16
+94179;1.4.15 VAGO 08/25;1.4.00 S FREITAS -SUP SPI IV - 12/16
+90721;1.4.16 ANDRE BRAGA 06/11/17;1.4.00 S FREITAS -SUP SPI IV - 12/16
+91536;1.4.17 EDNEI DALAQUA 11/03/24;1.4.00 S FREITAS -SUP SPI IV - 12/16
+91302;1.4.18 VAGO 02/26;1.4.00 S FREITAS -SUP SPI IV - 12/16
+93661;1.5.00 CECILIO MIGUEL SUP SPI II 08/24;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+90136;1.5.01 ANDREZA SOUZA 25/08/25;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+90135;1.5.02 DANIEL INACIO 22/04/26;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+94295;1.5.03 ANGELO OLIVEIRA 09/12/24;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+93899;1.5.04 ALEXANDRE LOUBACK 13/01/25;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+90345;1.5.05 JOAO GHISINE 06/03/19;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+93557;1.5.06 VAGO 10/25;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+93594;1.5.07 LUCIENE CRUZ 19/05/25;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+91698;1.5.08 MARCELO GOMES 02/09/19;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+90862;1.5.09 RAFAEL VICENTE 05/07/21;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+90346;1.5.10 DORIVAL SCALIANTE 07/03/22;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+94216;1.5.11 LILIAN MONSALVES 09/06/25;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+90264;1.5.12 CARLOS CESAR 09/09/24;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+90654;1.5.13 HERICA SOUZA 16/09/24;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+94353;1.5.14 VAGO 05/26;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+91004;1.5.15 CARLOS SOUZA 02/03/26;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+90341;1.5.16 GABRIEL BORGES 02/03/26;1.5.00 CECILIO MIGUEL SUP SPI II 08/24
+93688;1.6.00 JOAO PIRES 08/06/26;1.6.00 JOAO PIRES 08/06/26
+94351;1.6.01 RAFAEL VENCESLAU 13/02/23;1.6.00 JOAO PIRES 08/06/26
+90459;1.6.02 DONIZETE PINHEIRO 10/04/23;1.6.00 JOAO PIRES 08/06/26
+94293;1.6.03 AREDIO PARREIRA 19/02/24;1.6.00 JOAO PIRES 08/06/26
+90855;1.6.04 IVANILDO SANTOS 08/07/24;1.6.00 JOAO PIRES 08/06/26
+93639;1.6.05 PRISCILA COSTA 06/07/26;1.6.00 JOAO PIRES 08/06/26
+90352;1.6.06 ADEMAR FERREIRA 02/05/23;1.6.00 JOAO PIRES 08/06/26
+90767;1.6.07 MARCOS GALINDO 04/01/17;1.6.00 JOAO PIRES 08/06/26
+93572;1.6.08 MAYARA OLIVEIRA 10/06/24;1.6.00 JOAO PIRES 08/06/26
+90340;1.6.09 ANGELA MOREIRA 21/07/25;1.6.00 JOAO PIRES 08/06/26
+91546;1.6.10 OTHON SILVA 11/05/26;1.6.00 JOAO PIRES 08/06/26
+94357;1.6.11 VAGO 05/26;1.6.00 JOAO PIRES 08/06/26
+90310;1.6.12 DIVALDO SILVA - 02/24;1.6.00 JOAO PIRES 08/06/26
+93750;1.6.13 VAGO 11/25;1.6.00 JOAO PIRES 08/06/26
+93701;1.8.00 MOIRA BORIN - MC SP 09/24;1.8.00 MOIRA BORIN - MC SP 09/24
+93703;1.9.00 FABIO TOTA - MC SPC/LESTE 05/15;1.9.00 FABIO TOTA - MC SPC/LESTE 05/15
+93737;2.0.00 ROSA - REG II GO/DF;5.0.00 GRANDES CONTAS
+93873;2.1.00 ARTHUR - SUP GO I 02/03/26;2.1.00 ARTHUR - SUP GO I 02/03/26
+90185;2.1.01 VAGO 03/26;2.1.00 ARTHUR - SUP GO I 02/03/26
+94138;2.1.02 AMANDA RIBEIRO 17/05/21;2.1.00 ARTHUR - SUP GO I 02/03/26
+90177;2.1.03 EDSON PINTO 21/08/23;2.1.00 ARTHUR - SUP GO I 02/03/26
+94139;2.1.04 LUCAS MOTA 14/06/21;2.1.00 ARTHUR - SUP GO I 02/03/26
+91369;2.1.05 ADEILDO SILVA 18/06/18;2.1.00 ARTHUR - SUP GO I 02/03/26
+94553;2.1.06 GABRIEL AQUINO 01/08/2024;2.1.00 ARTHUR - SUP GO I 02/03/26
+93932;2.1.07 ERICK VERNILLO 09/03/26;2.1.00 ARTHUR - SUP GO I 02/03/26
+91731;2.1.09 VAGO 06/26;2.1.00 ARTHUR - SUP GO I 02/03/26
+91354;2.1.10 RAQUEL RODRIGUES 09/10/23;2.1.00 ARTHUR - SUP GO I 02/03/26
+90774;2.1.11 GESSYKA - PJ 08/06/26;2.1.00 ARTHUR - SUP GO I 02/03/26
+93586;2.1.11 VALQUIRIA HERCULINO 07/02/22;2.1.00 ARTHUR - SUP GO I 02/03/26
+93587;2.2.00 SUEIDE - SUP GO II 02/03/26;2.2.00 SUEIDE - SUP GO II 02/03/26
+94030;2.2.01 HELIO CASTELHANO - PJ - 01/20;2.2.00 SUEIDE - SUP GO II 02/03/26
+91474;2.2.02 MARCOS SILVA 19/07/21;2.2.00 SUEIDE - SUP GO II 02/03/26
+90199;2.2.03 DIOGO ROCHA 08/06/26;2.2.00 SUEIDE - SUP GO II 02/03/26
+90200;2.2.04 FABIO FILHO 22/04/26;2.2.00 SUEIDE - SUP GO II 02/03/26
+93563;2.2.05 MARCELO NEVES 10/10/22;2.2.00 SUEIDE - SUP GO II 02/03/26
+93931;2.2.06 MORGANA RODRIGUES 21/05/18;2.2.00 SUEIDE - SUP GO II 02/03/26
+90283;2.2.07 MARCO CARDOSO 12/01/26;2.2.00 SUEIDE - SUP GO II 02/03/26
+90179;2.2.08 NARAYANE ALMEIDA 13/04/26;2.2.00 SUEIDE - SUP GO II 02/03/26
+94028;2.2.09 ROBERTO MORAIS 10/11/25;2.2.00 SUEIDE - SUP GO II 02/03/26
+90178;2.2.10 DANIEL ALVES 08/06/26;2.2.00 SUEIDE - SUP GO II 02/03/26
+91570;2.2.11 GILDEON CARNEIRO 21/11/22;2.2.00 SUEIDE - SUP GO II 02/03/26
+90763;2.2.12 VAGO 06/26;2.2.00 SUEIDE - SUP GO II 02/03/26
+94029;2.2.13 VAGO 05/26;2.2.00 SUEIDE - SUP GO II 02/03/26
+93895;2.2.14 DAVID ALVES 08/06/26;2.2.00 SUEIDE - SUP GO II 02/03/26
+93631;2.3.00 RAFAEL - SUP GO III 01/26;2.3.00 RAFAEL - SUP GO III 01/26
+90186;2.3.01 JULIANA NEPOMUCENO 11/05/26;2.3.00 RAFAEL - SUP GO III 01/26
+90187;2.3.02 ELIO OLIVEIRA 05/05/17;2.3.00 RAFAEL - SUP GO III 01/26
+93687;2.3.03 GABRIEL CUNHA 09/03/26;2.3.00 RAFAEL - SUP GO III 01/26
+91927;2.3.04 JOSE OLIVEIRA 14/02/24;2.3.00 RAFAEL - SUP GO III 01/26
+90768;2.3.05 DARA SANTOS 18/02/26;2.3.00 RAFAEL - SUP GO III 01/26
+91295;2.3.06 SIMAYR PEREIRA 22/04/26;2.3.00 RAFAEL - SUP GO III 01/26
+93725;2.3.07 WERLEY SANTOS 11/05/26;2.3.00 RAFAEL - SUP GO III 01/26
+91887;2.3.08 RUBENS MATOS 09/02/26;2.3.00 RAFAEL - SUP GO III 01/26
+93596;2.3.09 MARCOS FREIRE 16/03/26;2.3.00 RAFAEL - SUP GO III 01/26
+90592;2.3.10 ELY BASTOS 04/12/23;2.3.00 RAFAEL - SUP GO III 01/26
+91879;2.3.11 VAGO 06/26;2.3.00 RAFAEL - SUP GO III 01/26
+90306;2.3.12 JULIO CESAR 12/01/26;2.3.00 RAFAEL - SUP GO III 01/26
+93976;2.3.13 KAIK GOMES 15/04/24;2.3.00 RAFAEL - SUP GO III 01/26
+90203;2.3.14 WESLEY CASTILHO 09/02/26;2.3.00 RAFAEL - SUP GO III 01/26
+93896;2.4.00 LUCIANO AMORIM SUP. DF 06/25;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+93901;2.4.01 CLEBER SILVA 07/12/20;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+90190;2.4.02 ANA FLAVIA BARBOSA 19/08/24;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+90724;2.4.03 HAMILTON SOUSA 11/05/20;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+90725;2.4.04 ANDERSENE CIRINO 17/04/23;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+93893;2.4.05 BRUNO MONTEIRO 22/09/25;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+93904;2.4.06 ANTONIO MAIA 20/06/22;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+90789;2.4.07 AMAURI SILVA 13/04/26;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+91462;2.4.08 FRANCISCO OLIVEIRA 10/11/25;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+90790;2.4.09 CLAUDIO BARROSO 13/04/26;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+90773;2.4.10 GABRIEL LOPES 19/01/26;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+91424;2.4.11 SEBASTIAO MAGALHAES 11/02/25;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+91353;2.4.12 MAURICIO - PJ 23/02/2026;2.4.00 LUCIANO AMORIM SUP. DF 06/25
+93907;2.5.00 FABIANE - MC 19/01/26;2.5.00 FABIANE ALMEIDA 19/01/26
+93728;3.0.00 KRIS - REG IV RJ - 04/23;5.0.00 GRANDES CONTAS
+93653;3.1.00 MAURO SILVA SUP RJ I 08/24;3.1.00 MAURO SILVA SUP RJ I 08/24
+94134;3.1.01 RAISLA OLINTO 22/10/24;3.1.00 MAURO SILVA SUP RJ I 08/24
+90902;3.1.02 MAURO LOPES 06/03/23;3.1.00 MAURO SILVA SUP RJ I 08/24
+90903;3.1.03 LUIZ AZEVEDO 03/04/18;3.1.00 MAURO SILVA SUP RJ I 08/24
+91148;3.1.04 FELIX SA 06/11/17;3.1.00 MAURO SILVA SUP RJ I 08/24
+91803;3.1.05 CARLOS OLIVIERI 04/03/24;3.1.00 MAURO SILVA SUP RJ I 08/24
+91137;3.1.06 DANIEL CHAVES 02/04/18;3.1.00 MAURO SILVA SUP RJ I 08/24
+91357;3.1.07 MARILZA ALVES 16/09/24;3.1.00 MAURO SILVA SUP RJ I 08/24
+91805;3.1.08 PAMELA OLIVEIRA 22/10/24;3.1.00 MAURO SILVA SUP RJ I 08/24
+94102;3.1.09 MARIA PACHECO 06/07/26;3.1.00 MAURO SILVA SUP RJ I 08/24
+93674;3.2.00 LAURO SILVA SUP RJ II 06/25;3.2.00 LAURO SILVA SUP RJ II 06/25
+91139;3.2.01 VAGO 06/26;3.2.00 LAURO SILVA SUP RJ II 06/25
+94095;3.2.02 MARCELO ALVES 09/03/26;3.2.00 LAURO SILVA SUP RJ II 06/25
+94099;3.2.03 ALEXANDRE VIEIRA 08/05/23;3.2.00 LAURO SILVA SUP RJ II 06/25
+90899;3.2.04 VAGO 05/26;3.2.00 LAURO SILVA SUP RJ II 06/25
+90924;3.2.05 MARCIA NUNES 01/06/17;3.2.00 LAURO SILVA SUP RJ II 06/25
+93637;3.2.06 FERNANDO REISSINGER 11/08/25;3.2.00 LAURO SILVA SUP RJ II 06/25
+91807;3.2.07 CAROLINA FERNANDES 16/03/26;3.2.00 LAURO SILVA SUP RJ II 06/25
+90920;3.2.08 DAISY OLIVEIRA 15/06/26;3.2.00 LAURO SILVA SUP RJ II 06/25
+93691;3.2.09 DANIELLE MARTINS 13/07/26;3.2.00 LAURO SILVA SUP RJ II 06/25
+90921;3.2.10 ALEXANDRE SILVA 01/09/17;3.2.00 LAURO SILVA SUP RJ II 06/25
+94033;3.3.00 LUCIANO SUP. RJ III - 01/26;3.3.00 LUCIANO SUP. RJ III - 01/26
+93978;3.3.01 VAGO 03/26;3.3.00 LUCIANO SUP. RJ III - 01/26
+91568;3.3.02 JORGE COSTA 16/12/24;3.3.00 LUCIANO SUP. RJ III - 01/26
+94103;3.3.03 JANICE ALVARENGA 17/01/22;3.3.00 LUCIANO SUP. RJ III - 01/26
+90917;3.3.04 THIAGO GRANDINI 17/02/25;3.3.00 LUCIANO SUP. RJ III - 01/26
+91905;3.3.05 JORGE DRAGO 08/07/24;3.3.00 LUCIANO SUP. RJ III - 01/26
+91558;3.3.06 DANIELLE MASINI 03/12/18;3.3.00 LUCIANO SUP. RJ III - 01/26
+90931;3.3.07 LEONNAN BEAUCLAIR 10/02/25;3.3.00 LUCIANO SUP. RJ III - 01/26
+93667;3.3.08 DIEGO DE 01/08/17;3.3.00 LUCIANO SUP. RJ III - 01/26
+90932;3.3.09 JOAO MARCELINO 01/08/17;3.3.00 LUCIANO SUP. RJ III - 01/26
+91556;3.3.10 THIAGO GONÇALVES 08/06/26;3.3.00 LUCIANO SUP. RJ III - 01/26
+90900;3.3.11 GIULLIANO AMARAL 19/08/24;3.3.00 LUCIANO SUP. RJ III - 01/26
+94106;3.3.12 ROBERTO SOARES 21/07/25;3.3.00 LUCIANO SUP. RJ III - 01/26
+90928;3.3.13 RONALDO PAULA 09/12/19;3.3.00 LUCIANO SUP. RJ III - 01/26
+91941;3.3.14 VAGO 10/25;3.3.00 LUCIANO SUP. RJ III - 01/26
+91906;3.3.15 VAGO 06/26;3.3.00 LUCIANO SUP. RJ III - 01/26
+93743;3.4.00 ELIAS - SUP RJ V 11/25;3.4.00 ELIAS - SUP RJ V 11/25
+91812;3.4.01 ELIANE FONSECA 13/12/21;3.4.00 ELIAS - SUP RJ V 11/25
+91718;3.4.02 SANDRO NEVES 15/07/24;3.4.00 ELIAS - SUP RJ V 11/25
+94176;3.4.03 CARLOS FRANCO 17/05/21;3.4.00 ELIAS - SUP RJ V 11/25
+90898;3.4.04 THAIZA SANTOS 18/02/26;3.4.00 ELIAS - SUP RJ V 11/25
+90919;3.4.05 EVERALDO AMARAL 07/02/22;3.4.00 ELIAS - SUP RJ V 11/25
+91904;3.4.06 HELISON DUARTE 08/09/20;3.4.00 ELIAS - SUP RJ V 11/25
+91717;3.4.07 ERICK CARNEIRO 04/04/22;3.4.00 ELIAS - SUP RJ V 11/25
+91714;3.4.08 MARCOS DE 12/08/19;3.4.00 ELIAS - SUP RJ V 11/25
+91146;3.4.09 DJALMA SIQUEIRA 12/08/19;3.4.00 ELIAS - SUP RJ V 11/25
+90915;3.4.10 MICELINO COSTA 05/03/18;3.4.00 ELIAS - SUP RJ V 11/25
+90916;3.4.11 AROLDO DE 01/06/17;3.4.00 ELIAS - SUP RJ V 11/25
+90929;3.6.00 FERNANDA ALVES - MC 05/26;3.6.00 FERNANDA ALVES - MC 05/26
+93646;4.0.00 ALBERTO REG SUL - 05/25;5.0.00 GRANDES CONTAS
+93925;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+91400;4.1.01 FELIX PASETTO 09/02/26;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+94400;4.1.02 VAGO 05/26;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+91518;4.1.03 MARCELO DAGOSTIN 02/03/26;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+94251;4.1.04 MARCIO SALES - PJ 19/05/25;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+91459;4.1.05 MARCIA SALES 15/03/21;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+91402;4.1.06 LEANDRO MEDEIROS - PJ 19/05/25;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+94396;4.1.07 VALDIR BUGANSA 16/09/24;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+93983;4.1.08 SIDNEI OLIVEIRA - PJ - 07/12/23;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+94397;4.1.09 VALCILENE VOLTOLINI 09/09/24;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+93675;4.1.10 RICARDO ALVES 02/03/26;4.1.00 EDIOMAR VICENTE - SUP PR I 08/24
+93692;4.2.00 VALDIR SUP PR II - 06/07/26;4.2.00 VALDIR SUP PR II - 06/07/26
+94231;4.2.01 AGUINALDO CHAGAS - PJ - 11/08/23;4.2.00 VALDIR SUP PR II - 06/07/26
+94360;4.2.02 ALTEVIR LIMA - PJ 07/07/26;4.2.00 VALDIR SUP PR II - 06/07/26
+94386;4.2.03 MARIA CAROLINA 22/04/26;4.2.00 VALDIR SUP PR II - 06/07/26
+91477;4.2.04 ADERBAL VELOZO 04/04/26;4.2.00 VALDIR SUP PR II - 06/07/26
+94262;4.2.05 ROGER BELLINI 08/06/26;4.2.00 VALDIR SUP PR II - 06/07/26
+91409;4.2.06 JOAO BACH 01/10/18;4.2.00 VALDIR SUP PR II - 06/07/26
+91413;4.2.07 JACKSON OLIVEIRA -PJ 07/07/26;4.2.00 VALDIR SUP PR II - 06/07/26
+91674;4.2.08 VAGO 05/26;4.2.00 VALDIR SUP PR II - 06/07/26
+93951;4.2.09 VAGO 05/26;4.2.00 VALDIR SUP PR II - 06/07/26
+93930;4.2.10 EVERSON OLIVEIRA -PJ 07/07/26;4.2.00 VALDIR SUP PR II - 06/07/26
+93630;4.3.00 CLEOBIS SUP PR III 11/25;4.3.00 CLEOBIS SUP PR III 11/25
+94230;4.3.01 DOUGLAS CORREA 22/04/26;4.3.00 CLEOBIS SUP PR III 11/25
+91381;4.3.02 JEAN FELIPE 04/04/26;4.3.00 CLEOBIS SUP PR III 11/25
+91383;4.3.03 MARCIO GERMINIASI 09/06/25;4.3.00 CLEOBIS SUP PR III 11/25
+93732;4.3.04 EDER ANDRADE 08/09/25;4.3.00 CLEOBIS SUP PR III 11/25
+91387;4.3.05 MAILSON CORREA - PJ 07/07/26;4.3.00 CLEOBIS SUP PR III 11/25
+91677;4.3.06 ANDRE PINHEIRO 20/10/25;4.3.00 CLEOBIS SUP PR III 11/25
+91390;4.3.07 VAMILTON JUNIOR 14/09/20;4.3.00 CLEOBIS SUP PR III 11/25
+91392;4.3.08 ELIELTON FRAGA 06/12/21;4.3.00 CLEOBIS SUP PR III 11/25
+91466;4.3.09 DONIZETE OLIVEIRA 19/01/26;4.3.00 CLEOBIS SUP PR III 11/25
+91380;4.3.10 JOAO FLORENTINO -PJ 07/07/26;4.3.00 CLEOBIS SUP PR III 11/25
+93649;4.4.00 LUCIO NUNES 04/04/26;4.4.00 LUCIO NUNES 04/04/26
+93982;4.4.01 MURILO JORGE - 05/05/25;4.4.00 LUCIO NUNES 04/04/26
+91373;4.4.02 JORGE FADEL - 05/05/25;4.4.00 LUCIO NUNES 04/04/26
+91460;4.4.03 FILIPE CRESCENCIO 10/02/25;4.4.00 LUCIO NUNES 04/04/26
+91461;4.4.04 CARLA BORJAS 22/04/26;4.4.00 LUCIO NUNES 04/04/26
+91719;4.4.05 AGENOR MELO 08/06/20;4.4.00 LUCIO NUNES 04/04/26
+91415;4.4.06 JULIANA CARDOSO 22/04/26;4.4.00 LUCIO NUNES 04/04/26
+91372;4.4.07 TIAGO SANTOS 12/01/26;4.4.00 LUCIO NUNES 04/04/26
+94336;4.4.08 ANDREA RODRIGUES 22/04/26;4.4.00 LUCIO NUNES 04/04/26
+91377;4.4.09 VAGO 05/26;4.4.00 LUCIO NUNES 04/04/26
+91720;4.4.10 LEANDRO CAETANO 22/04/26;4.4.00 LUCIO NUNES 04/04/26
+91375;4.4.11 PRISCILA VAGARINI 06/07/26;4.4.00 LUCIO NUNES 04/04/26
+93714;4.5.00 GUILHERME - SUP SC II 11/25;4.5.00 GUILHERME - SUP SC II 11/25
+94334;4.5.01 ROBERTO GRIGOLO 12/01/26;4.5.00 GUILHERME - SUP SC II 11/25
+91636;4.5.02 GILMAR BELOTTO - PJ 09/07/24;4.5.00 GUILHERME - SUP SC II 11/25
+91604;4.5.03 FABIO CASARIL 12/04/21;4.5.00 GUILHERME - SUP SC II 11/25
+91635;4.5.04 TATIANA SCHEFFER - 04/03/24;4.5.00 GUILHERME - SUP SC II 11/25
+91378;4.5.05 MATHEUS SIMIONI 04/04/26;4.5.00 GUILHERME - SUP SC II 11/25
+91427;4.5.06 GEOVANI SOUZA 13/01/25;4.5.00 GUILHERME - SUP SC II 11/25
+94329;4.5.07 JOHNNY SCHELENSKI 06/07/26;4.5.00 GUILHERME - SUP SC II 11/25
+94324;4.5.08 ABEL PEREIRA 19/01/26;4.5.00 GUILHERME - SUP SC II 11/25
+94328;4.5.09 LIOMAR TIRELLI 09/02/26;4.5.00 GUILHERME - SUP SC II 11/25
+91618;4.5.10 ANTONIO NETO 15/12/25;4.5.00 GUILHERME - SUP SC II 11/25
+91366;4.6.00 MICHELE PAULA - MC SC I - 06/18;4.6.00 MICHELE PAULA - MC SC I - 06/18
+94297;4.7.00 KARIN VOLPATO- MC PR I - 07/23;4.7.00 KARIN VOLPATO- MC PR I - 07/23
+91770;4.8.00 SIDNEY SCARPARO - MC RS I 01/21;4.8.00 SIDNEY SCARPARO - MC RS I 01/21
+93942;4.9.00 LEONARDO ALMEIDA MC RS - PJ 05/26;4.9.00 LEONARDO ALMEIDA MC RS - PJ 05/26
+93710;5.1.00 JOSEANE COORD. TLV/OL;5.1.00 JOSEANE COORD. TLV/OL
+94453;5.1.01 VINICIUS 07/25;5.1.00 JOSEANE COORD. TLV/OL
+91230;5.1.02 ALESSANDRA - 06/2017;5.1.00 JOSEANE COORD. TLV/OL
+90706;5.1.03 JULIANE 10/2024;5.1.00 JOSEANE COORD. TLV/OL
+91232;5.1.04 CAROLAINE - 03/2023;5.1.00 JOSEANE COORD. TLV/OL
+91239;5.1.05 DRIELLE - 10/2022;5.1.00 JOSEANE COORD. TLV/OL
+90695;5.1.06 CRISTIANE 21/05/26;5.1.00 JOSEANE COORD. TLV/OL
+90701;5.1.07 KAYO 21/05/26;5.1.00 JOSEANE COORD. TLV/OL
+90707;5.1.08 VAGO 11/25;5.1.00 JOSEANE COORD. TLV/OL
+90686;5.1.09 ENILDE - 07/2016;5.1.00 JOSEANE COORD. TLV/OL
+90693;5.1.10 GISELE - 11/2015;5.1.00 JOSEANE COORD. TLV/OL
+94292;5.1.11 ADRIANA 05/08/24;5.1.00 JOSEANE COORD. TLV/OL
+91236;5.1.12 RHOGER 02/25;5.1.00 JOSEANE COORD. TLV/OL
+90705;5.1.13 VAGO 08/24;5.1.00 JOSEANE COORD. TLV/OL
+91842;5.1.14 VAGO 2/2025;5.1.00 JOSEANE COORD. TLV/OL
+91233;5.1.15 VANESSA 02/2024;5.1.00 JOSEANE COORD. TLV/OL
+94452;5.1.16 VAGO 12/25;5.1.00 JOSEANE COORD. TLV/OL
+91238;5.1.17 SETOR VAGO AC;5.1.00 JOSEANE COORD. TLV/OL
+90564;5.1.19 SETOR VAGO;5.1.00 JOSEANE COORD. TLV/OL
+91231;5.1.20 PROSPECTADO VAGO;5.1.00 JOSEANE COORD. TLV/OL`;
+
+// ================= HELPERS =================
+const fmt=n=>Math.round(n).toLocaleString('pt-BR');
+const pct=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+const shortSup=s=>(s||'').replace(/^\d+\.\d+\.\d+\s*/,'');
+const shortName=s=>(s||'').replace(/^\d+\.\d+\.\d+\s*/,'');
+const supCode=s=>{const m=(s||'').match(/^\d+\.\d+\.\d+/);return m?m[0]:(s||'');};
+const supOfVend=n=>{const m=(n||'').match(/^(\d+)\.(\d+)\./);return m?`${m[1]}.${m[2]}.00`:'';};
+const trunc=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
+const normLista=s=>{s=(s||'').trim().replace(/\s+/g,' ');const m=s.match(/^(.*?)\s*-?\s*(SP|GO|DF|PR|RJ|SC)$/i);return (m&&m[1].trim())?`${m[1].trim()} - ${m[2].toUpperCase()}`:s;};
+const C={red:'#ff6b6b',amber:'#ffd43b',green:'#51cf66',blue:'#4dabf7',brand:'#12b886',purple:'#9775fa'};
+const rateColor=t=>t>=40?C.red:t>=20?C.amber:C.green;
+function badge(r){const c=r==='Alto'?'b-alto':r==='Médio'?'b-medio':'b-baixo';const e=r==='Alto'?'🔴':r==='Médio'?'🟡':'🟢';return `<span class="badge ${c}">${e} ${r}</span>`;}
+Chart.defaults.color='#93a4b8';Chart.defaults.borderColor='#2a3a4d';Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
+
+// base de vendedores
+const BASE=BASE_CSV.trim().split(/\r?\n/).slice(1).map(l=>{const p=l.split(';');return {id:(p[0]||'').trim(),nome:(p[1]||'').trim(),sup:(p[2]||'').trim()};});
+const isVendedor=b=>{const m=b.nome.match(/^\d+\.\d+\.(\d+)/);return !!m && m[1]!=='00' && !/vago/i.test(b.nome);};
+const SELLERS=BASE.filter(isVendedor);
+const supFullByCode={};BASE.forEach(b=>{const c=supCode(b.sup);if(!supFullByCode[c])supFullByCode[c]=b.sup;});
+
+// ===== SEMANA 2 (08–14/Jul) — por disparo =====
+const LISTAS_W2=REL_CSV.trim().split(/\r?\n/).slice(1).map(l=>{const p=l.split(';');const vend=(p[2]||'').trim();
+  return {cod:(p[1]||'').trim(),vend,supc:supOfVend(vend),filial:(p[4]||'').trim(),lista:normLista((p[5]||'').trim()),
+    msgs:+((p[7]||'0').trim())||0,data:(p[8]||'').trim(),suc:+((p[9]||'0').trim())||0,fal:+((p[10]||'0').trim())||0};});
+const _byV={};
+LISTAS_W2.forEach(r=>{const v=_byV[r.cod]=_byV[r.cod]||{codigo:r.cod,vendedor:r.vend,filial:r.filial,supc:r.supc,disparos:0,msgs:0,sucesso:0,falha:0,maxSim:0};
+  v.disparos++;v.msgs+=r.msgs;v.sucesso+=r.suc;v.falha+=r.fal;v.maxSim=Math.max(v.maxSim,r.msgs);v.filial=r.filial;});
+const DATA_W2=Object.values(_byV).map(v=>({...v,supervisor:supFullByCode[v.supc]||v.supc,taxa:v.msgs?v.falha/v.msgs*100:0,risco:v.maxSim>=50?'Alto':v.maxSim>=25?'Médio':'Baixo'}));
+
+// ===== SEMANA 3 (15–17/Jul, parcial) — por disparo =====
+const LISTAS_W3=REL_CSV_W3.trim().split(/\r?\n/).slice(1).map(l=>{const p=l.split(';');const vend=(p[2]||'').trim();
+  return {cod:(p[1]||'').trim(),vend,supc:supOfVend(vend),filial:(p[4]||'').trim(),lista:normLista((p[5]||'').trim()),
+    msgs:+((p[7]||'0').trim())||0,data:(p[8]||'').trim(),suc:+((p[9]||'0').trim())||0,fal:+((p[10]||'0').trim())||0};});
+const _byV3={};
+LISTAS_W3.forEach(r=>{const v=_byV3[r.cod]=_byV3[r.cod]||{codigo:r.cod,vendedor:r.vend,filial:r.filial,supc:r.supc,disparos:0,msgs:0,sucesso:0,falha:0,maxSim:0};
+  v.disparos++;v.msgs+=r.msgs;v.sucesso+=r.suc;v.falha+=r.fal;v.maxSim=Math.max(v.maxSim,r.msgs);v.filial=r.filial;});
+const DATA_W3=Object.values(_byV3).map(v=>({...v,supervisor:supFullByCode[v.supc]||v.supc,taxa:v.msgs?v.falha/v.msgs*100:0,risco:v.maxSim>=50?'Alto':v.maxSim>=25?'Médio':'Baixo'}));
+
+// ===== SEMANA 4 (22–28/Jul) — por disparo =====
+const LISTAS_W4=REL_CSV_W4.trim().split(/\r?\n/).slice(1).map(l=>{const p=l.split(';');const vend=(p[2]||'').trim();
+  return {cod:(p[1]||'').trim(),vend,supc:supOfVend(vend),filial:(p[4]||'').trim(),lista:normLista((p[5]||'').trim()),
+    msgs:+((p[7]||'0').trim())||0,data:(p[8]||'').trim(),suc:+((p[9]||'0').trim())||0,fal:+((p[10]||'0').trim())||0};});
+const _byV4={};
+LISTAS_W4.forEach(r=>{const v=_byV4[r.cod]=_byV4[r.cod]||{codigo:r.cod,vendedor:r.vend,filial:r.filial,supc:r.supc,disparos:0,msgs:0,sucesso:0,falha:0,maxSim:0};
+  v.disparos++;v.msgs+=r.msgs;v.sucesso+=r.suc;v.falha+=r.fal;v.maxSim=Math.max(v.maxSim,r.msgs);v.filial=r.filial;});
+const DATA_W4=Object.values(_byV4).map(v=>({...v,supervisor:supFullByCode[v.supc]||v.supc,taxa:v.msgs?v.falha/v.msgs*100:0,risco:v.maxSim>=50?'Alto':v.maxSim>=25?'Médio':'Baixo'}));
+
+// ===== SEMANA 1 (01–07/Jul) — consolidado por vendedor =====
+// [codigo,vendedor,supervisor,filial,disparos,msgs,maxSim,sucesso,falha,taxa,risco]
+const W1=[
+["91474","2.2.02 MARCOS SILVA","2.2.00 SUEIDE - SUP GO II","1 - FARMA GO",1,166,166,81,85,51.2,"Alto"],
+["90338","1.4.10 TATIANE LINO","1.4.00 S FREITAS - SUP SPI IV","3 - FARMA SP",3,393,131,347,46,11.7,"Alto"],
+["94295","1.5.03 ANGELO OLIVEIRA","1.5.00 CECILIO MIGUEL SPI II","3 - FARMA SP",1,126,126,79,47,37.3,"Alto"],
+["90310","1.6.12 DIVALDO SILVA","1.6.00 JOAO PIRES","3 - FARMA SP",1,123,123,111,12,9.8,"Alto"],
+["93899","1.5.04 ALEXANDRE LOUBACK","1.5.00 CECILIO MIGUEL SPI II","3 - FARMA SP",1,121,121,115,6,5.0,"Alto"],
+["90264","1.5.12 CARLOS CESAR","1.5.00 CECILIO MIGUEL SPI II","3 - FARMA SP",3,357,119,356,1,0.3,"Alto"],
+["94363","1.1.14 JOSE GONÇALVES","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",3,336,112,159,177,52.7,"Alto"],
+["90352","1.6.06 ADEMAR FERREIRA","1.6.00 JOAO PIRES","3 - FARMA SP",4,249,101,224,25,10.0,"Alto"],
+["90136","1.5.01 ANDREZA SOUZA","1.5.00 CECILIO MIGUEL SPI II","3 - FARMA SP",1,98,98,63,35,35.7,"Alto"],
+["93563","2.2.05 MARCELO NEVES","2.2.00 SUEIDE - SUP GO II","1 - FARMA GO",2,188,94,181,7,3.7,"Alto"],
+["94286","1.1.04 MARILENE SILVA","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",4,372,93,315,57,15.3,"Alto"],
+["91392","4.3.08 ELIELTON FRAGA","4.3.00 CLEOBIS SUP PR III","6 - FARMA PR",8,739,93,701,38,5.1,"Alto"],
+["93565","1.1.05 WELLINGTON SILVA","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",8,723,91,392,331,45.8,"Alto"],
+["94121","1.1.15 DAVI INACIO","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",2,180,90,156,24,13.3,"Alto"],
+["90346","1.5.10 DORIVAL SCALIANTE","1.5.00 CECILIO MIGUEL SPI II","3 - FARMA SP",2,180,90,21,69,38.3,"Alto"],
+["91698","1.5.08 MARCELO GOMES","1.5.00 CECILIO MIGUEL SPI II","3 - FARMA SP",1,89,89,62,27,30.3,"Alto"],
+["90209","1.1.06 JOSE PIMENTA","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",2,86,85,5,81,94.2,"Alto"],
+["90517","1.3.08 KARLOS EDUARDO","1.3.00 VILMA - SUP SPC III","3 - FARMA SP",3,203,85,32,171,84.2,"Alto"],
+["94362","1.1.02 PAULO SANTOS","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",5,320,84,296,24,7.5,"Alto"],
+["90231","1.1.07 LUCIANA SILVA","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",3,238,80,130,108,45.4,"Alto"],
+["90340","1.6.09 ANGELA MOREIRA","1.6.00 JOAO PIRES","3 - FARMA SP",1,78,78,75,3,3.8,"Alto"],
+["90320","1.1.08 ANDERSON SILVA","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",6,372,77,228,144,38.7,"Alto"],
+["91803","3.1.05 CARLOS OLIVIERI","3.1.00 MAURO SILVA SUP RJ I","5 - FARMA RJ",1,75,75,50,25,33.3,"Alto"],
+["91714","3.4.08 MARCOS DE","3.4.00 ELIAS - SUP RJ V","5 - FARMA RJ",1,75,75,71,4,5.3,"Alto"],
+["91718","3.4.02 SANDRO NEVES","3.4.00 ELIAS - SUP RJ V","5 - FARMA RJ",2,148,74,138,10,6.8,"Alto"],
+["94138","2.1.02 AMANDA RIBEIRO","2.1.00 ARTHUR - SUP GO I","1 - FARMA GO",1,74,74,46,28,37.8,"Alto"],
+["90902","3.1.02 MAURO LOPES","3.1.00 MAURO SILVA SUP RJ I","5 - FARMA RJ",1,74,74,68,6,8.1,"Alto"],
+["91927","2.3.04 JOSE OLIVEIRA","2.3.00 RAFAEL - SUP GO III","1 - FARMA GO",1,72,72,0,72,100.0,"Alto"],
+["93642","1.1.10 THIAGO MULATO","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",4,244,67,156,88,36.1,"Alto"],
+["93976","2.3.13 KAIK GOMES","2.3.00 RAFAEL - SUP GO III","1 - FARMA GO",1,65,65,58,7,10.8,"Alto"],
+["90319","1.3.03 RENATO LOPES","1.3.00 VILMA - SUP SPC III","3 - FARMA SP",1,64,64,9,55,85.9,"Alto"],
+["91148","3.1.04 FELIX SA","3.1.00 MAURO SILVA SUP RJ I","5 - FARMA RJ",1,61,61,54,7,11.5,"Alto"],
+["93931","2.2.06 MORGANA RODRIGUES","2.2.00 SUEIDE - SUP GO II","1 - FARMA GO",5,300,60,261,39,13.0,"Alto"],
+["94028","2.2.09 ROBERTO MORAIS","2.2.00 SUEIDE - SUP GO II","1 - FARMA GO",3,177,59,95,82,46.3,"Alto"],
+["90903","3.1.03 LUIZ AZEVEDO","3.1.00 MAURO SILVA SUP RJ I","5 - FARMA RJ",1,54,54,48,6,11.1,"Alto"],
+["94355","1.1.12 MATHEUS AZEVEDO","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",3,78,44,73,5,6.4,"Médio"],
+["91462","2.4.08 FRANCISCO OLIVEIRA","2.4.00 LUCIANO AMORIM SUP. DF","2 - FARMA DF",2,86,43,20,66,76.7,"Médio"],
+["91719","4.4.05 AGENOR MELO","4.4.00 LUCIO NUNES","6 - FARMA PR",1,42,42,42,0,0.0,"Médio"],
+["90117","1.3.04 EZIO PAULA","1.3.00 VILMA - SUP SPC III","3 - FARMA SP",1,34,34,33,1,2.9,"Médio"],
+["90297","1.3.05 JOSE SIMAO","1.3.00 VILMA - SUP SPC III","3 - FARMA SP",1,30,30,28,2,6.7,"Médio"],
+["91905","3.3.05 JORGE DRAGO","3.3.00 LUCIANO SUP. RJ III","5 - FARMA RJ",1,29,29,26,3,10.3,"Médio"],
+["90764","1.3.02 PEDRO LUIS","1.3.00 VILMA - SUP SPC III","3 - FARMA SP",3,30,28,25,5,16.7,"Médio"],
+["90283","2.2.07 MARCO CARDOSO","2.2.00 SUEIDE - SUP GO II","1 - FARMA GO",2,36,23,7,29,80.6,"Baixo"],
+["91369","2.1.05 ADEILDO SILVA","2.1.00 ARTHUR - SUP GO I","1 - FARMA GO",1,20,20,20,0,0.0,"Baixo"],
+["94139","2.1.04 LUCAS MOTA","2.1.00 ARTHUR - SUP GO I","1 - FARMA GO",1,17,17,10,7,41.2,"Baixo"],
+["90213","1.1.13 FABIO MORAIS","1.1.00 MAXWEL - SUP SPC I","3 - FARMA SP",30,439,16,251,188,42.8,"Baixo"],
+["90179","2.2.08 NARAYANE ALMEIDA","2.2.00 SUEIDE - SUP GO II","1 - FARMA GO",4,43,11,41,2,4.7,"Baixo"],
+["93893","2.4.05 BRUNO MONTEIRO","2.4.00 LUCIANO AMORIM SUP. DF","2 - FARMA DF",1,10,10,9,1,10.0,"Baixo"],
+["90199","2.2.03 DIOGO ROCHA","2.2.00 SUEIDE - SUP GO II","1 - FARMA GO",14,94,10,84,10,10.6,"Baixo"],
+["90203","2.3.14 WESLEY CASTILHO","2.3.00 RAFAEL - SUP GO III","1 - FARMA GO",1,10,10,0,0,0.0,"Baixo"],
+["93895","2.2.14 DAVID ALVES","2.2.00 SUEIDE - SUP GO II","1 - FARMA GO",3,28,10,21,7,25.0,"Baixo"],
+["90345","1.5.05 JOAO GHISINE","1.5.00 CECILIO MIGUEL SPI II","3 - FARMA SP",10,88,10,80,8,9.1,"Baixo"],
+["93732","4.3.04 EDER ANDRADE","4.3.00 CLEOBIS SUP PR III","6 - FARMA PR",5,50,10,48,2,4.0,"Baixo"],
+["90190","2.4.02 ANA FLAVIA BARBOSA","2.4.00 LUCIANO AMORIM SUP. DF","1 - FARMA GO",2,9,5,7,2,22.2,"Baixo"],
+["91373","4.4.02 JORGE FADEL","4.4.00 LUCIO NUNES","6 - FARMA PR",4,4,1,4,0,0.0,"Baixo"],
+["93613","1.2.12 DIEGO AGUIAR","1.2.00 BRUNO - SUP SPC V","3 - FARMA SP",1,1,1,1,0,0.0,"Baixo"]
+];
+const KW=["codigo","vendedor","supervisor","filial","disparos","msgs","maxSim","sucesso","falha","taxa","risco"];
+const DATA_W1=W1.map(r=>{const o=Object.fromEntries(r.map((v,i)=>[KW[i],v]));o.supc=supCode(o.supervisor);o.supervisor=supFullByCode[o.supc]||o.supervisor;return o;});
+
+// ===== Combinado (soma por vendedor) =====
+function mergeWeeks(list){const m={};list.forEach(d=>{const o=m[d.codigo]=m[d.codigo]||{codigo:d.codigo,vendedor:d.vendedor,supervisor:d.supervisor,filial:d.filial,disparos:0,msgs:0,sucesso:0,falha:0,maxSim:0};
+  o.disparos+=d.disparos;o.msgs+=d.msgs;o.sucesso+=d.sucesso;o.falha+=d.falha;o.maxSim=Math.max(o.maxSim,d.maxSim);o.vendedor=d.vendedor||o.vendedor;o.supervisor=d.supervisor||o.supervisor;o.filial=d.filial||o.filial;});
+  return Object.values(m).map(v=>({...v,supc:supCode(v.supervisor),taxa:v.msgs?v.falha/v.msgs*100:0,risco:v.maxSim>=50?'Alto':v.maxSim>=25?'Médio':'Baixo'}));}
+const DATA_BOTH=mergeWeeks([...DATA_W1,...DATA_W2,...DATA_W3,...DATA_W4]);
+const ALL=DATA_BOTH;
+
+// ===== semanas selecionadas (multi) =====
+let activeWeeks=new Set(['w1','w2','w3','w4']);
+const weekSel=()=>activeWeeks.size?activeWeeks:new Set(['w1','w2','w3','w4']);
+function weekData(){const sel=weekSel();const parts=[];if(sel.has('w1'))parts.push(...DATA_W1);if(sel.has('w2'))parts.push(...DATA_W2);if(sel.has('w3'))parts.push(...DATA_W3);if(sel.has('w4'))parts.push(...DATA_W4);return parts.length&&sel.size>1?mergeWeeks(parts):parts;}
+function getListas(){const sel=weekSel();const parts=[];if(sel.has('w2'))parts.push(...LISTAS_W2);if(sel.has('w3'))parts.push(...LISTAS_W3);if(sel.has('w4'))parts.push(...LISTAS_W4);return parts;}
+const WEEK_RANGES={w1:'01–07',w2:'08–14',w3:'15–17',w4:'22–28'};
+const WEEK_FULLLABEL={w1:'Semana 1 (01–07/Jul)',w2:'Semana 2 (08–14/Jul)',w3:'Semana 3 (15–17/Jul, parcial)',w4:'Semana 4 (22–28/Jul)'};
+const weekLabel=()=>{const sel=weekSel();if(sel.size===4)return 'Todas (01–28/Jul)';if(sel.size===1)return WEEK_FULLLABEL[[...sel][0]];
+  const arr=[...sel].sort();return arr.join('+').toUpperCase()+' ('+arr.map(w=>WEEK_RANGES[w]).join(', ')+'/Jul)';};
+
+const supNames={};
+function regSup(c){if(c&&!supNames[c])supNames[c]=shortSup(supFullByCode[c]||c);}
+SELLERS.forEach(b=>regSup(supCode(b.sup)));ALL.forEach(d=>regSup(supCode(d.supervisor)));
+
+// estado
+let activeSups=new Set();
+const selActive=()=>activeSups.size>0;
+const selHas=c=>activeSups.size===0||activeSups.has(c);
+const charts={};
+function mk(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
+function base(){const wd=weekData();return selActive()?wd.filter(d=>activeSups.has(supCode(d.supervisor))):wd;}
+let altoKey='maxSim',altoDir=-1, supKey='taxa',supDir=-1, sortKey='disparos',sortDir=-1;
+
+// multi-seleção supervisores
+const msList=document.getElementById('msList'),msBtn=document.getElementById('msBtn'),msPanel=document.getElementById('msPanel');
+const supCodesSorted=Object.keys(supNames).sort();
+supCodesSorted.forEach(c=>{const row=document.createElement('label');row.className='ms-item';row.innerHTML=`<input type="checkbox" value="${c}"> ${supNames[c]}`;msList.appendChild(row);});
+function updateMsBtn(){const n=activeSups.size;msBtn.textContent=(n===0?'Todos os supervisores':n===1?(supNames[[...activeSups][0]]||'1 supervisor'):n+' supervisores selecionados')+' ▾';}
+msList.addEventListener('change',()=>{activeSups=new Set([...msList.querySelectorAll('input:checked')].map(i=>i.value));updateMsBtn();renderAll();});
+msBtn.onclick=e=>{e.stopPropagation();msPanel.style.display=msPanel.style.display==='none'?'block':'none';};
+document.addEventListener('click',e=>{if(!msPanel.contains(e.target)&&e.target!==msBtn)msPanel.style.display='none';});
+document.getElementById('msAll').onclick=()=>{msList.querySelectorAll('input').forEach(i=>i.checked=true);activeSups=new Set(supCodesSorted);updateMsBtn();renderAll();};
+document.getElementById('msNone').onclick=()=>{msList.querySelectorAll('input').forEach(i=>i.checked=false);activeSups=new Set();updateMsBtn();renderAll();};
+
+const fFilial=document.getElementById('fFilial'),fRisco=document.getElementById('fRisco'),fBusca=document.getElementById('fBusca'),fVendedor=document.getElementById('fVendedor');
+[...new Set(ALL.map(d=>d.filial))].sort().forEach(f=>fFilial.add(new Option(f,f)));
+[...new Set(ALL.map(d=>d.vendedor))].sort((a,b)=>shortName(a).localeCompare(shortName(b))).forEach(v=>fVendedor.add(new Option(shortName(v),v)));
+
+// ================= RENDER =================
+function renderAll(){
+  const D=base();
+  const sum=(a,k)=>a.reduce((s,x)=>s+x[k],0);
+  const msgs=sum(D,'msgs'),fal=sum(D,'falha'),disp=sum(D,'disparos');
+  const taxa=msgs?fal/msgs*100:0;
+
+  const agg={};
+  SELLERS.forEach(b=>{const c=supCode(b.sup);(agg[c]=agg[c]||{tot:0,at:0});agg[c].tot++;});
+  weekData().forEach(d=>{const c=supCode(d.supervisor);if(agg[c])agg[c].at++;});
+  let arr=Object.entries(agg).filter(([c])=>selHas(c)).map(([c,v])=>({c,name:supNames[c]||c,tot:v.tot,at:v.at,sem:v.tot-v.at,cob:v.tot?v.at/v.tot*100:0}));
+  const totSel=arr.reduce((s,x)=>s+x.tot,0),totAt=arr.reduce((s,x)=>s+x.at,0),totSem=totSel-totAt;
+  const cob=totSel?totAt/totSel*100:0;
+
+  document.getElementById('kpisCob').innerHTML=[
+    {lbl:"Vendedores cadastrados",val:fmt(totSel),cls:"blue"},
+    {lbl:"✅ Dispararam",val:fmt(totAt),cls:"green"},
+    {lbl:"🚫 Não dispararam",val:fmt(totSem),cls:"red"},
+    {lbl:"Cobertura",val:cob.toFixed(0)+'%',cls:"amber"},
+    {lbl:"Listas disparadas",val:fmt(disp),cls:"purple"},
+    {lbl:"Mensagens enviadas",val:fmt(msgs),cls:"blue"}
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="lbl">${k.lbl}</div><div class="val">${k.val}</div></div>`).join('');
+
+  const selLabel = activeSups.size===1 ? (supNames[[...activeSups][0]]||'') : activeSups.size+' supervisores';
+  const wd=weekData();const WT={disp:wd.reduce((s,d)=>s+d.disparos,0),msgs:wd.reduce((s,d)=>s+d.msgs,0),fal:wd.reduce((s,d)=>s+d.falha,0)};WT.taxa=WT.msgs?WT.fal/WT.msgs*100:0;
+  document.getElementById('gInfo').innerHTML= selActive()
+    ? `📆 ${weekLabel()} · <b>${selLabel}</b> · ${totAt} de ${totSel} dispararam (${cob.toFixed(0)}%) · ${fmt(msgs)} msgs`
+    : `📆 ${weekLabel()} · <b>${totAt}</b> de <b>${totSel}</b> dispararam (${cob.toFixed(0)}%) · <b>${fmt(WT.msgs)}</b> msgs · ${pct(WT.taxa)} falha`;
+  document.getElementById('foot').innerHTML=`Fonte: relatórios de disparos Medicamental (Semana 1: 01–07/Jul · Semana 2: 08–14/Jul · Semana 3: 15–17/Jul, parcial · Semana 4: 22–28/Jul) + base vendedores. Cada disparo = 1 envio de lista. Risco: Alto ≥ 50 msgs simultâneas · Médio ≥ 25 · Baixo &lt; 25. Exibindo <b>${weekLabel()}</b>: <b>${fmt(WT.disp)}</b> disparos · <b>${fmt(WT.msgs)}</b> msgs · <b>${pct(WT.taxa)}</b> falha. Nomes das listas disponíveis nas Semanas 2, 3 e 4. *Semana 3 cobre apenas 15–17/Jul (dados até essa data); 18–21/Jul não constam nos relatórios.<br>Criado por Manuela Barbeiro · última atualização em 29/07/2026`;
+
+  mk('coverageDonut',{type:'doughnut',data:{labels:['✅ Dispararam','🚫 Não dispararam'],datasets:[{data:[totAt,totSem],backgroundColor:[C.green,C.red],borderColor:'#16212e',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} (${totSel?(c.raw/totSel*100).toFixed(0):0}%)`}}}}});
+
+  const bysup=[...arr].sort((a,b)=>b.tot-a.tot);
+  mk('coverageBySup',{type:'bar',data:{labels:bysup.map(s=>s.name),datasets:[
+    {label:'✅ Dispararam',data:bysup.map(s=>s.at),backgroundColor:C.green,stack:'x'},
+    {label:'🚫 Não dispararam',data:bysup.map(s=>s.sem),backgroundColor:C.red,stack:'x'}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true,beginAtZero:true,title:{display:true,text:'Nº de vendedores'}},y:{stacked:true}}}});
+
+  const rank=[...D].sort((a,b)=>b.disparos-a.disparos);
+  const topR=rank.slice(0,15);
+  mk('rankChart',{type:'bar',data:{labels:topR.map(d=>shortName(d.vendedor)),datasets:[{label:'Nº de listas',data:topR.map(d=>d.disparos),backgroundColor:C.brand,borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:c=>`${fmt(topR[c.dataIndex].msgs)} msgs · ${pct(topR[c.dataIndex].taxa)} falha`}}},scales:{x:{beginAtZero:true,title:{display:true,text:'Nº de listas (disparos)'}}}}});
+  document.getElementById('bodyRank').innerHTML=rank.map((d,i)=>`<tr><td class="rank">${i+1}º</td><td>${d.vendedor}</td><td>${shortSup(d.supervisor)}</td><td class="num"><b>${fmt(d.disparos)}</b></td><td class="num">${fmt(d.msgs)}</td><td class="num rate" style="color:${rateColor(d.taxa)}">${pct(d.taxa)}</td></tr>`).join('')||`<tr class="muted-row"><td colspan="6">Sem dados.</td></tr>`;
+
+  // risco
+  const nA=D.filter(d=>d.risco==='Alto').length,nM=D.filter(d=>d.risco==='Médio').length,nB=D.filter(d=>d.risco==='Baixo').length;
+  const msgA=sum(D.filter(d=>d.risco==='Alto'),'msgs'),maxSim=D.length?Math.max(...D.map(d=>d.maxSim)):0;
+  document.getElementById('kpisRisco').innerHTML=[
+    {lbl:"Vendedores ativos",val:fmt(D.length),cls:"blue"},
+    {lbl:"🔴 Risco Alto",val:nA+' <small>vend.</small>',cls:"red"},
+    {lbl:"🟡 Risco Médio",val:nM+' <small>vend.</small>',cls:"amber"},
+    {lbl:"🟢 Risco Baixo",val:nB+' <small>vend.</small>',cls:"green"},
+    {lbl:"Maior disparo simult.",val:fmt(maxSim),cls:"red"},
+    {lbl:"Msgs risco alto",val:fmt(msgA)+' <small>'+(msgs?(msgA/msgs*100).toFixed(0):0)+'%</small>',cls:"red"},
+    {lbl:"Taxa de falha",val:pct(taxa),cls:"amber"}
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="lbl">${k.lbl}</div><div class="val">${k.val}</div></div>`).join('');
+
+  mk('riscoPie',{type:'doughnut',data:{labels:['🔴 Alto','🟡 Médio','🟢 Baixo'],datasets:[{data:[nA,nM,nB],backgroundColor:[C.red,C.amber,C.green],borderColor:'#16212e',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} vend. (${D.length?(c.raw/D.length*100).toFixed(0):0}%)`}}}}});
+
+  const supMap={};
+  D.forEach(d=>{const key=d.supervisor;(supMap[key]=supMap[key]||{nome:key,disparos:0,msgs:0,falhas:0,vend:0,alto:0,medio:0,baixo:0,maxSim:0,filiais:new Set()});
+    const s=supMap[key];s.disparos+=d.disparos;s.msgs+=d.msgs;s.falhas+=d.falha;s.vend++;s.maxSim=Math.max(s.maxSim,d.maxSim);s.filiais.add(d.filial.split(' - ')[1]||d.filial);
+    if(d.risco==='Alto')s.alto++;else if(d.risco==='Médio')s.medio++;else s.baixo++;});
+  const SUP=Object.values(supMap).map(s=>({...s,taxa:s.msgs?s.falhas/s.msgs*100:0,filiais:[...s.filiais].join(', ')}));
+
+  const supAlto=[...SUP].sort((a,b)=>b.alto-a.alto||b.maxSim-a.maxSim);
+  mk('riscoSup',{type:'bar',data:{labels:supAlto.map(s=>shortSup(s.nome)),datasets:[
+    {label:'🔴 Alto',data:supAlto.map(s=>s.alto),backgroundColor:C.red,stack:'x'},
+    {label:'🟡 Médio',data:supAlto.map(s=>s.medio),backgroundColor:C.amber,stack:'x'},
+    {label:'🟢 Baixo',data:supAlto.map(s=>s.baixo),backgroundColor:C.green,stack:'x'}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true,beginAtZero:true,title:{display:true,text:'Nº de vendedores'}},y:{stacked:true}}}});
+
+  const maxV=Math.max(1,...SUP.map(s=>s.vend));
+  mk('supChart',{type:'bubble',data:{datasets:SUP.map(s=>({label:shortSup(s.nome),data:[{x:s.msgs,y:+s.taxa.toFixed(1),r:8+18*(s.vend/maxV),nome:shortSup(s.nome),vend:s.vend,fal:s.falhas}],backgroundColor:rateColor(s.taxa)+'cc',borderColor:rateColor(s.taxa),borderWidth:1}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;return [p.nome,`Mensagens: ${fmt(p.x)} · Taxa falha: ${pct(p.y)}`,`${p.vend} vendedores · ${fmt(p.fal)} falhas`];}}}},
+      scales:{x:{type:'linear',beginAtZero:true,title:{display:true,text:'Mensagens enviadas (volume)'}},y:{beginAtZero:true,suggestedMax:100,title:{display:true,text:'Taxa de falha (%)'},ticks:{callback:v=>v+'%'}}}}});
+
+  (function(){const rows=[...SUP].sort((a,b)=>{let av=a[supKey],bv=b[supKey];return typeof av==='string'?String(av).localeCompare(String(bv))*supDir:(av-bv)*supDir;});
+    document.getElementById('bodySup').innerHTML=rows.map(s=>`<tr><td>${shortSup(s.nome)}</td><td>${s.filiais}</td><td class="num">${s.vend}</td><td class="num">${fmt(s.disparos)}</td><td class="num">${fmt(s.msgs)}</td><td class="num" style="color:${C.red}">${fmt(s.falhas)}</td><td class="num rate" style="color:${rateColor(s.taxa)}">${pct(s.taxa)}</td><td class="num">${fmt(s.maxSim)}</td><td><span class="mini"><span class="dot" style="background:${C.red}"></span>${s.alto}<span class="dot" style="background:${C.amber};margin-left:6px"></span>${s.medio}<span class="dot" style="background:${C.green};margin-left:6px"></span>${s.baixo}</span></td></tr>`).join('')||`<tr class="muted-row"><td colspan="9">Sem disparos para este supervisor.</td></tr>`;})();
+
+  (function(){const alto=D.filter(d=>d.risco==='Alto');document.getElementById('altoCount').textContent=alto.length+' vendedores';
+    const rows=[...alto].sort((a,b)=>{let av=a[altoKey],bv=b[altoKey];return typeof av==='string'?av.localeCompare(bv)*altoDir:(av-bv)*altoDir;});
+    document.getElementById('bodyAlto').innerHTML=rows.map(d=>`<tr><td class="num"><span class="heat" style="background:rgba(255,107,107,.18);color:${C.red}">${fmt(d.maxSim)}</span></td><td>${d.vendedor}</td><td>${shortSup(d.supervisor)}</td><td>${d.filial}</td><td class="num">${fmt(d.msgs)}</td><td class="num" style="color:${C.red}">${fmt(d.falha)}</td><td class="num rate" style="color:${rateColor(d.taxa)}">${pct(d.taxa)}</td></tr>`).join('')||`<tr class="muted-row"><td colspan="7">Nenhum vendedor em risco alto neste filtro.</td></tr>`;})();
+
+  renderVend();
+  document.getElementById('fezSubtitle').textContent = (selActive() ? selLabel+' · '+D.length : weekData().length+' vendedores')+' · '+weekLabel();
+  renderSem();
+  renderListas();
+}
+
+function renderVend(){
+  let D=base().filter(d=>(!fFilial.value||d.filial===fFilial.value)&&(!fRisco.value||d.risco===fRisco.value)&&(!fVendedor.value||d.vendedor===fVendedor.value)&&(!fBusca.value||(d.vendedor+' '+d.codigo).toLowerCase().includes(fBusca.value.toLowerCase())));
+  const rk={Alto:3,'Médio':2,Baixo:1};
+  D.sort((a,b)=>{let av=a[sortKey],bv=b[sortKey];if(sortKey==='risco'){av=rk[av];bv=rk[bv];}return typeof av==='string'?av.localeCompare(bv)*sortDir:(av-bv)*sortDir;});
+  document.getElementById('rowcount').textContent=D.length+' vendedores';
+  document.getElementById('tbody').innerHTML=D.map(d=>`<tr><td>${d.codigo}</td><td>${d.vendedor}</td><td>${shortSup(d.supervisor)}</td><td>${d.filial}</td><td class="num"><b>${fmt(d.disparos)}</b></td><td class="num">${fmt(d.msgs)}</td><td class="num">${fmt(d.maxSim)}</td><td class="num" style="color:${C.green}">${fmt(d.sucesso)}</td><td class="num" style="color:${C.red}">${fmt(d.falha)}</td><td class="num rate" style="color:${rateColor(d.taxa)}">${pct(d.taxa)}</td><td>${badge(d.risco)}</td></tr>`).join('')||`<tr class="muted-row"><td colspan="11">Nenhum vendedor para este filtro.</td></tr>`;
+}
+
+function renderSem(){
+  const wrap=document.getElementById('semDisparoWrap');
+  const inScope=b=>selHas(supCode(b.sup));
+  const activeSet=new Set(weekData().map(d=>d.codigo));
+  const lista=SELLERS.filter(b=>!activeSet.has(b.id)&&inScope(b));const totalSel=SELLERS.filter(inScope).length;const ativos=totalSel-lista.length;const cob=totalSel?(ativos/totalSel*100):0;
+  const grp={};lista.forEach(b=>{(grp[supCode(b.sup)]=grp[supCode(b.sup)]||[]).push(b);});
+  const codes=Object.keys(grp).sort();
+  const groupsHtml=codes.map(c=>{const membros=grp[c];const totC=SELLERS.filter(b=>supCode(b.sup)===c).length;const atC=totC-membros.length;
+    return `<tr style="background:var(--panel2)"><td colspan="2"><b>${supNames[c]||shortSup(membros[0].sup)}</b> <span class="pill">${atC} de ${totC} dispararam</span><span class="pill" style="color:${C.red}">${membros.length} sem disparo</span></td></tr>`+
+      membros.map(b=>`<tr><td>${b.id}</td><td>${b.nome}</td></tr>`).join('');}).join('');
+  wrap.innerHTML=`<div class="card"><h3>Não dispararam <span class="pill" style="color:${C.red}">${lista.length} vendedores</span> <span class="pill">cobertura: ${cob.toFixed(0)}% (${ativos}/${totalSel})</span></h3>
+    <div class="hint">Vendedores cadastrados (base vendedores) que não realizaram nenhum disparo no período. Critério: posições de vendedor ativas — exclui VAGO e supervisores/coordenadores (código X.X.00).</div>
+    <div class="table-scroll"><table><thead><tr><th>Código</th><th>Vendedor</th></tr></thead><tbody>${groupsHtml||`<tr class="muted-row"><td colspan="2">Nenhum vendedor sem disparo neste filtro. 🎉</td></tr>`}</tbody></table></div></div>`;
+}
+
+function renderListas(){
+  const src=getListas();
+  if(!src.length){
+    document.getElementById('lStatus').textContent='Nomes das listas disponíveis nas Semanas 2, 3 e 4 (08–28/Jul)';
+    if(charts['listChart'])charts['listChart'].destroy();
+    document.getElementById('lCount').textContent='0 listas';document.getElementById('dvCount').textContent='0 vendedores';
+    document.getElementById('bodyList').innerHTML=`<tr class="muted-row"><td colspan="4">Na Semana 1 há apenas o consolidado por vendedor — sem detalhe de nomes de listas.</td></tr>`;
+    document.getElementById('bodyDispVend').innerHTML=`<tr class="muted-row"><td colspan="6">Selecione "Semana 2", "Semana 3", "Semana 4" ou uma combinação para ver os nomes das listas.</td></tr>`;
+    return;
+  }
+  const q=(document.getElementById('lBusca').value||'').toLowerCase();
+  const D=src.filter(d=>selHas(d.supc)&&(!q||(d.lista+' '+d.vend+' '+d.cod).toLowerCase().includes(q)));
+  document.getElementById('lStatus').textContent=fmt(D.length)+' disparos · '+new Set(D.map(d=>d.lista)).size+' listas';
+  const byName={};D.forEach(d=>{const o=byName[d.lista]=byName[d.lista]||{lista:d.lista,vezes:0,msgs:0,suc:0,fal:0};o.vezes++;o.msgs+=d.msgs;o.suc+=d.suc;o.fal+=d.fal;});
+  const names=Object.values(byName).map(o=>({...o,taxa:o.msgs?o.fal/o.msgs*100:0})).sort((a,b)=>b.msgs-a.msgs);
+  document.getElementById('lCount').textContent=names.length+' listas';
+  const top=names.slice(0,15);
+  mk('listChart',{type:'bar',data:{labels:top.map(n=>trunc(n.lista,34)),datasets:[{data:top.map(n=>n.msgs),backgroundColor:C.brand,borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>top[c[0].dataIndex].lista,afterLabel:c=>`${top[c.dataIndex].vezes} envios · ${pct(top[c.dataIndex].taxa)} falha`}}},scales:{x:{beginAtZero:true,title:{display:true,text:'Mensagens'}}}}});
+  document.getElementById('bodyList').innerHTML=names.map(n=>`<tr><td>${n.lista}</td><td class="num">${fmt(n.vezes)}</td><td class="num">${fmt(n.msgs)}</td><td class="num rate" style="color:${rateColor(n.taxa)}">${pct(n.taxa)}</td></tr>`).join('')||`<tr class="muted-row"><td colspan="4">Sem dados.</td></tr>`;
+  const byV={};D.forEach(d=>{(byV[d.vend]=byV[d.vend]||[]).push(d);});
+  const vendKeys=Object.keys(byV).sort();document.getElementById('dvCount').textContent=vendKeys.length+' vendedores';
+  document.getElementById('bodyDispVend').innerHTML=vendKeys.map(v=>{const arr=[...byV[v]].sort((a,b)=>b.msgs-a.msgs);
+    const t=arr.reduce((a,d)=>({m:a.m+d.msgs,s:a.s+d.suc,f:a.f+d.fal}),{m:0,s:0,f:0});const tx=t.m?t.f/t.m*100:0;
+    return `<tr style="background:var(--panel)"><td><b>${v}</b> <span class="pill">${arr.length} listas</span></td><td></td><td class="num"><b>${fmt(t.m)}</b></td><td class="num" style="color:${C.green}">${fmt(t.s)}</td><td class="num" style="color:${C.red}">${fmt(t.f)}</td><td class="num rate" style="color:${rateColor(tx)}">${pct(tx)}</td></tr>`+
+      arr.map(d=>`<tr><td style="padding-left:26px">${d.lista}</td><td style="color:var(--muted)">${d.data}</td><td class="num">${fmt(d.msgs)}</td><td class="num" style="color:${C.green}">${fmt(d.suc)}</td><td class="num" style="color:${C.red}">${fmt(d.fal)}</td><td class="num">${d.msgs?pct(d.fal/d.msgs*100):'—'}</td></tr>`).join('');}).join('')||`<tr class="muted-row"><td colspan="6">Nenhum disparo neste filtro.</td></tr>`;
+}
+
+// ================= EVENTOS =================
+document.querySelectorAll('#tblAlto th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(altoKey===k)altoDir*=-1;else{altoKey=k;altoDir=(['vendedor','supervisor','filial'].includes(k))?1:-1;}renderAll();});
+document.querySelectorAll('#tblSup th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(supKey===k)supDir*=-1;else{supKey=k;supDir=(['nome','filiais','risco'].includes(k))?1:-1;}renderAll();});
+document.querySelectorAll('#tbl th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(['codigo','vendedor','supervisor','filial'].includes(k))?1:-1;}renderVend();});
+[fFilial,fRisco,fVendedor].forEach(el=>el.onchange=renderVend);fBusca.oninput=renderVend;
+document.getElementById('clearBtn').onclick=()=>{fFilial.value='';fRisco.value='';fVendedor.value='';fBusca.value='';renderVend();};
+document.getElementById('lBusca').oninput=renderListas;
+function syncWeeks(){activeWeeks=new Set(['w1','w2','w3','w4'].filter(w=>document.getElementById({w1:'wk1',w2:'wk2',w3:'wk3',w4:'wk4'}[w]).checked));renderAll();}
+document.getElementById('wk1').onchange=syncWeeks;
+document.getElementById('wk2').onchange=syncWeeks;
+document.getElementById('wk3').onchange=syncWeeks;
+document.getElementById('wk4').onchange=syncWeeks;
+
+renderAll();
+</script>
+</body>
+</html>
